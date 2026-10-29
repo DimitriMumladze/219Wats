@@ -56,10 +56,13 @@
   --ink:         #1d1b18;
   --ink-soft:    #5f584f;
   --rule:        #d5cec1;
-  --brass:       #b88a3b;
-  --brass-dark:  #9a7130;
+  /* the one accent: blue cue chalk, cool against the warm room */
+  --accent:      #3d6d94;
+  --accent-dark: #2f5878;
+  --accent-lit:  #4b80ab;
+  --accent-ink:  #ffffff;   /* label colour on the accent (5.5:1) */
   --brick:       #a63d2f;
-  /* the light switch, in cloth green so brass stays the primary action alone */
+  /* the light switch, in cloth green so the accent marks the action alone */
   --switch-on:   #2a7550;
   --switch-off:  #cdc6b8;
 
@@ -270,7 +273,7 @@ body.state-PLAYING .led{ background:var(--lamp); box-shadow:0 0 7px rgba(255,217
 }
 .favicon{
   width:12px; height:12px; flex:none; border-radius:2px;
-  background:var(--brass); color:#231b12;
+  background:var(--accent); color:var(--accent-ink);
   font-size:7px; font-weight:700; line-height:12px; text-align:center;
 }
 .tabplus{ padding:0 8px 5px; color:#5a5d60; font-size:14px; line-height:1; }
@@ -302,7 +305,7 @@ body.state-PLAYING .led{ background:var(--lamp); box-shadow:0 0 7px rgba(255,217
 }
 .mark{
   width:19px; height:19px; flex:none; border-radius:3px;
-  background:var(--brass); color:#231b12;
+  background:var(--accent); color:var(--accent-ink);
   font-size:8.5px; font-weight:700; line-height:19px; text-align:center; letter-spacing:-.03em;
 }
 .wordmark{ font-size:11.5px; font-weight:600; letter-spacing:.15em; }
@@ -357,12 +360,12 @@ body.state-PLAYING .led{ background:var(--lamp); box-shadow:0 0 7px rgba(255,217
   align-self:flex-start; margin-top:12px;
   font:inherit; font-size:15px; font-weight:600;
   padding:11px 24px;
-  color:var(--ink); background:var(--brass);
-  border:0; border-bottom:2px solid var(--brass-dark); border-radius:var(--r);
+  color:var(--accent-ink); background:var(--accent);
+  border:0; border-bottom:2px solid var(--accent-dark); border-radius:var(--r);
   cursor:pointer; transition:background 160ms var(--ease);
 }
-.start:hover{ background:#c89a46; }
-.start:active{ background:var(--brass-dark); transform:translateY(1px); }
+.start:hover{ background:var(--accent-lit); }
+.start:active{ background:var(--accent-dark); transform:translateY(1px); }
 body.state-PLAYING #start{ display:none; }
 
 /* ---- time over + QR ------------------------------------------------------- */
@@ -387,7 +390,7 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
 .tb-ico.active{ position:relative; background:#3d4145; }
 .tb-ico.active::after{
   content:""; position:absolute; left:3px; right:3px; bottom:-4px; height:2px; border-radius:1px;
-  background:var(--brass);
+  background:var(--accent);
 }
 .winlogo{ width:14px; height:14px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:1.5px; }
 .winlogo i{ background:#5b8bb0; display:block; }
