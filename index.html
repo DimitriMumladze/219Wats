@@ -176,7 +176,7 @@ body.warmup-pc   :is(.lit-pc,.hole-pc){ animation:power-on 600ms linear; }
    He reacts the way a person does, in order rather than all at once:
    lamp goes out → he glances up at it (0.2s) → realises (0.9s) → head
    drops, shoulders sink, arm falls, a sigh, eyes half close (to 2.4s).
-   The beats play only once body.moody is set (the lamp's first change),
+   The beats play only once body.moody-pool is set (the lamp's first change),
    so nothing performs on page load.
    =========================================================================== */
 #player g{ transform-box:view-box; }
@@ -234,16 +234,16 @@ body:not(.pool-on) #player .mood-sad  { opacity:1; transition-delay:1100ms; }
 /* back in the light: a small lift as he straightens up */
 @keyframes lift{ 0%{ transform:none } 40%{ transform:translateY(-4px) } 100%{ transform:none } }
 
-body.moody:not(.pool-on) #head{ animation:head-dark 2200ms var(--body) backwards; }
-body.moody.pool-on       #head{ animation:head-light 1500ms var(--body) 150ms backwards; }
-body.moody:not(.pool-on) #player .gaze{ animation:gaze-dark 2200ms var(--body) backwards; }
-body.moody.pool-on       #player .gaze{ animation:gaze-light 1500ms var(--body) 150ms backwards; }
-body.moody:not(.pool-on) #player .brow-n{ animation:brow-n-dark 2000ms var(--body) backwards; }
-body.moody:not(.pool-on) #player .brow-f{ animation:brow-f-dark 2000ms var(--body) backwards; }
-body.moody.pool-on       #player .brow-n{ animation:brow-n-light 1300ms var(--body) 150ms backwards; }
-body.moody.pool-on       #player .brow-f{ animation:brow-f-light 1300ms var(--body) 150ms backwards; }
-body.moody:not(.pool-on) .p-sigh{ animation:sigh 1700ms ease-in-out 900ms; }
-body.moody.pool-on       .p-sigh{ animation:lift 900ms var(--body) 350ms; }
+body.moody-pool:not(.pool-on) #head{ animation:head-dark 2200ms var(--body) backwards; }
+body.moody-pool.pool-on       #head{ animation:head-light 1500ms var(--body) 150ms backwards; }
+body.moody-pool:not(.pool-on) #player .gaze{ animation:gaze-dark 2200ms var(--body) backwards; }
+body.moody-pool.pool-on       #player .gaze{ animation:gaze-light 1500ms var(--body) 150ms backwards; }
+body.moody-pool:not(.pool-on) #player .brow-n{ animation:brow-n-dark 2000ms var(--body) backwards; }
+body.moody-pool:not(.pool-on) #player .brow-f{ animation:brow-f-dark 2000ms var(--body) backwards; }
+body.moody-pool.pool-on       #player .brow-n{ animation:brow-n-light 1300ms var(--body) 150ms backwards; }
+body.moody-pool.pool-on       #player .brow-f{ animation:brow-f-light 1300ms var(--body) 150ms backwards; }
+body.moody-pool:not(.pool-on) .p-sigh{ animation:sigh 1700ms ease-in-out 900ms; }
+body.moody-pool.pool-on       .p-sigh{ animation:lift 900ms var(--body) 350ms; }
 
 /* ---- always: he is alive while he waits --------------------------------- */
 @keyframes breathe{ 0%,100%{ transform:none } 45%{ transform:translateY(-1.4px) } }
@@ -582,6 +582,104 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
 .tb-clock{ text-align:right; line-height:1.25; }
 .tb-clock span{ display:block; }
 
+/* ===========================================================================
+   THE PEOPLE IN THE BACK — each reacts to its own station's light only.
+   Ping pong: a rally while the light is on; the ball stops, they look up at
+   the lamp, then slump. Gaming PC: he plays while it's on; when it dies he
+   jerks back, hands up, then sinks into the chair. Origins are in each
+   person's own coordinates (feet for the players, hips for the gamer).
+   =========================================================================== */
+.pp-person g,.gm-person g{ transform-box:view-box; }
+.pp-upper  { transform-origin:0 -76px; }
+.pp-bat    { transform-origin:8px -117px; }
+.pp-free   { transform-origin:-6.5px -116px; }
+.pp-freeLow{ transform-origin:-6.5px -100px; }
+.pp-head   { transform-origin:0 -124px; }
+.pp-tail   { transform-origin:-6px -140px; }
+.gm-upper  { transform-origin:0 0; }
+.gm-armF   { transform-origin:2px -43px; }
+.gm-armN   { transform-origin:6px -42px; }
+.gm-head,.gm-headIdle{ transform-origin:5px -47px; }
+
+/* ---- playing --------------------------------------------------------------- */
+.pp-upper,.pp-bat,.pp-free,.pp-freeLow,.pp-head,
+.gm-upper,.gm-arm,.gm-head{ transition:transform 900ms cubic-bezier(.45,0,.3,1) 200ms; }
+.pp-upper  { transform:rotate(7deg); }
+.pp-freeLow{ transform:rotate(-30deg); }
+.pp-head   { transform:rotate(-3deg); }
+.gm-upper  { transform:rotate(14deg); }
+.gm-head   { transform:rotate(5deg); }
+.pp-happy,.pp-sad,.gm-happy,.gm-sad{ transition:opacity 500ms ease 400ms; }
+.pp-sad,.gm-sad{ opacity:0; }
+
+/* ---- the light is gone -------------------------------------------------------- */
+body:not(.pong-on) .pp-upper{ transform:translateY(2px) rotate(-1deg); transition-delay:900ms; transition-duration:1200ms; }
+body:not(.pong-on) .pp-bat  { transform:rotate(38deg); transition-delay:1000ms; transition-duration:1100ms; }
+body:not(.pong-on) .pp-head { transform:translateY(1px) rotate(16deg); transition-delay:800ms; transition-duration:1200ms; }
+body:not(.pong-on) .pp-girl .pp-free   { transform:rotate(20deg); transition-delay:1100ms; }
+body:not(.pong-on) .pp-girl .pp-freeLow{ transform:rotate(-39deg); transition-delay:1100ms; }
+body:not(.pong-on) .pp-boy  .pp-freeLow{ transform:rotate(25deg); transition-delay:1100ms; }
+body:not(.pong-on) .pp-happy{ opacity:0; transition-delay:1000ms; }
+body:not(.pong-on) .pp-sad  { opacity:1; transition-delay:1000ms; }
+
+body:not(.pc-on) .gm-upper{ transform:translateY(1px) rotate(-8deg); transition-delay:700ms; transition-duration:1200ms; }
+body:not(.pc-on) .gm-arm  { transform:rotate(58deg); transition-delay:800ms; transition-duration:1100ms; }
+body:not(.pc-on) .gm-head { transform:rotate(18deg); transition-delay:800ms; transition-duration:1200ms; }
+body:not(.pc-on) .gm-happy{ opacity:0; transition-delay:900ms; }
+body:not(.pc-on) .gm-sad  { opacity:1; transition-delay:900ms; }
+
+/* ---- the beat: what a person does in the first second ------------------------ */
+@keyframes pp-head-dark { 0%{ transform:rotate(-3deg) } 15%,35%{ transform:rotate(-14deg) } 100%{ transform:translateY(1px) rotate(16deg) } }
+@keyframes pp-head-light{ 0%{ transform:translateY(1px) rotate(16deg) } 30%{ transform:rotate(-12deg) } 100%{ transform:rotate(-3deg) } }
+@keyframes gm-up-dark  { 0%{ transform:rotate(14deg) } 14%,30%{ transform:rotate(-13deg) } 100%{ transform:translateY(1px) rotate(-8deg) } }
+@keyframes gm-arm-dark { 0%{ transform:none } 14%,32%{ transform:rotate(-48deg) } 100%{ transform:rotate(58deg) } }
+@keyframes gm-head-dark{ 0%{ transform:rotate(5deg) } 14%,32%{ transform:rotate(-10deg) } 100%{ transform:rotate(18deg) } }
+body.moody-pong:not(.pong-on) .pp-head{ animation:pp-head-dark 2000ms cubic-bezier(.45,0,.3,1) backwards; }
+body.moody-pong.pong-on       .pp-head{ animation:pp-head-light 1300ms cubic-bezier(.45,0,.3,1) 150ms backwards; }
+body.moody-pc:not(.pc-on) .gm-upper{ animation:gm-up-dark 1900ms cubic-bezier(.45,0,.3,1) backwards; }
+body.moody-pc:not(.pc-on) .gm-arm  { animation:gm-arm-dark 1900ms cubic-bezier(.45,0,.3,1) backwards; }
+body.moody-pc:not(.pc-on) .gm-head { animation:gm-head-dark 1900ms cubic-bezier(.45,0,.3,1) backwards; }
+
+/* ---- the rally: 1.6s there and back, one bounce on each half ------------------
+   She hits at 0%, he hits at 50%. Everything starts together 0.9s after the
+   light comes on, so the ball and the bats stay in step. */
+@keyframes rallyX{ 0%,100%{ transform:translateX(983px) } 50%{ transform:translateX(1227px) } }
+@keyframes rallyY{
+    0%  { transform:translateY(245px); animation-timing-function:cubic-bezier(.2,.6,.4,1) }
+   15.6%{ transform:translateY(230px); animation-timing-function:cubic-bezier(.6,0,.8,.4) }
+   38.1%{ transform:translateY(273px); animation-timing-function:cubic-bezier(.2,.6,.4,1) }
+   50%  { transform:translateY(245px); animation-timing-function:cubic-bezier(.2,.6,.4,1) }
+   65.6%{ transform:translateY(230px); animation-timing-function:cubic-bezier(.6,0,.8,.4) }
+   88.1%{ transform:translateY(273px); animation-timing-function:cubic-bezier(.2,.6,.4,1) }
+  100%  { transform:translateY(245px) }
+}
+@keyframes pp-swing{
+    0%{ transform:rotate(-8deg) }  12%{ transform:rotate(-34deg) }
+   40%{ transform:rotate(0deg) }   78%{ transform:rotate(26deg) }
+  100%{ transform:rotate(-8deg) }
+}
+@keyframes pp-bob { from{ transform:none } to{ transform:translateY(1.2px) } }
+@keyframes pp-tail{ from{ transform:rotate(-8deg) } to{ transform:rotate(10deg) } }
+.pp-ball{ opacity:0; transition:opacity 150ms; }
+.pp-rest{ transition:opacity 150ms; }
+body.pong-on .pp-ballX{ animation:rallyX 1.6s linear .9s infinite backwards; }
+body.pong-on .pp-ballY{ animation:rallyY 1.6s .9s infinite backwards; }
+body.pong-on .pp-ball { opacity:1; transition-delay:.9s; }
+body.pong-on .pp-rest { opacity:0; transition-delay:.9s; }
+body.pong-on .pp-girl .pp-bat{ animation:pp-swing 1.6s ease-in-out .9s infinite; }
+body.pong-on .pp-boy  .pp-bat{ animation:pp-swing 1.6s ease-in-out 1.7s infinite; }
+body.pong-on .pp-bob  { animation:pp-bob .8s ease-in-out infinite alternate; }
+body.pong-on .pp-tail { animation:pp-tail .8s ease-in-out infinite alternate; }
+
+/* ---- gaming: keys tapped, head bobbing, his character running on screen ------- */
+@keyframes gm-tap { 0%,49%{ transform:none } 50%,100%{ transform:translateY(-1.3px) } }
+@keyframes gm-bob { from{ transform:rotate(-1.5deg) } to{ transform:rotate(1.5deg) } }
+@keyframes gm-run { from{ transform:translateX(0) } to{ transform:translateX(96px) } }
+body.pc-on .gm-tapN    { animation:gm-tap .26s linear infinite; }
+body.pc-on .gm-tapF    { animation:gm-tap .34s linear .1s infinite; }
+body.pc-on .gm-headIdle{ animation:gm-bob .9s ease-in-out infinite alternate; }
+body.pc-on .gm-run     { animation:gm-run 2.4s linear infinite; }
+
 /* the iPhone's own chrome exists only on mobile */
 .ios-status,.ios-bar{ display:none; }
 
@@ -755,6 +853,9 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
 @media (prefers-reduced-motion:reduce){
   .lit,.hole{ animation:none!important; }
   #player *{ animation:none!important; }
+  .pp-person *,.gm-person *,.pp-ballX,.pp-ballY,.gm-run{ animation:none!important; }
+  .pp-ball{ display:none; }
+  .pp-rest{ opacity:1!important; }
   body.hall-over .led{ animation:none; }
   *{ transition-duration:200ms!important; }
 }
@@ -848,11 +949,15 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
       <mask id="lightMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1000">
         <rect x="0" y="0" width="1600" height="1000" fill="#fff"/>
         <g filter="url(#holeBlur)" fill="#000">
-          <path class="hole hole-pool" d="M-100 -100 H990 V380 H1700 V1100 H-100 Z"/>
-          <rect class="hole hole-pong" x="950" y="-100" width="390" height="460"/>
-          <rect class="hole hole-pc"   x="1260" y="-100" width="440" height="560"/>
+          <path class="hole hole-pool" d="M-100 -100 H910 V380 H1700 V1100 H-100 Z"/>
+          <rect class="hole hole-pong" x="900" y="-100" width="400" height="460"/>
+          <rect class="hole hole-pc"   x="1290" y="-100" width="410" height="560"/>
           <!-- spill from the counter screen: his face stays readable in the dark -->
           <ellipse cx="176" cy="520" rx="120" ry="230" opacity=".42"/>
+          <!-- the same faint spill for the people in the back -->
+          <ellipse cx="946" cy="275" rx="26" ry="80" opacity=".35"/>
+          <ellipse cx="1264" cy="275" rx="26" ry="80" opacity=".35"/>
+          <ellipse cx="1372" cy="268" rx="34" ry="52" opacity=".35"/>
         </g>
       </mask>
 
@@ -891,6 +996,19 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
       <!-- shading stays on the face and in the hair, never as a halo round them -->
       <clipPath id="faceClip"><path d="M171 331 C192 330 207 343 209 362 C210 372 208 379 207 382 C206 389 205 394 202 399 C198 405 190 409 182 409.5 C175 410 169 408 163 403 C156 398 151 392 148 385 C143 375 142 360 146 350 C150 338 160 331 171 331 Z"/></clipPath>
       <clipPath id="hairClip"><path d="M143 374 C138 350 150 329 174 327 C190 326 205 333 210 348 C211 356 209 361 207 364 C205 355 201 349 195 347 C192 349 189 345 184 346 C179 347 176 345 171 348 C168 350 166 348 164 349 C158 351 155 360 155 369 L152 384 C148 382 145 379 143 374 Z"/></clipPath>
+      <!-- the people in the back: skin lit from the lamp side, plain clothes -->
+      <linearGradient id="ppSkin" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"   stop-color="#b07a5c"/>
+        <stop offset="100%" stop-color="#e2b391"/>
+      </linearGradient>
+      <linearGradient id="jeans" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#3a4760"/>
+        <stop offset="100%" stop-color="#252e40"/>
+      </linearGradient>
+      <linearGradient id="hoodie" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"   stop-color="#1f222a"/>
+        <stop offset="100%" stop-color="#3a3f4c"/>
+      </linearGradient>
       <linearGradient id="trousers" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0%"   stop-color="#15161a"/>
         <stop offset="100%" stop-color="#2c2f35"/>
@@ -994,10 +1112,116 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
       <!-- the net, seen edge-on, with a post at each end -->
       <path d="M1103 252 h4 v38 h-4 z" fill="#d8dde0" opacity=".32"/>
       <path d="M1105 251 V262 M1105 280 V291" stroke="#2a2724" stroke-width="2.5"/>
-      <!-- a bat and a ball left on the table -->
-      <ellipse cx="1025" cy="281" rx="10" ry="4.5" fill="#a8332a"/>
-      <path d="M1034 282 l9 2" stroke="#6b4630" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="1158" cy="271" r="2.6" fill="#f2efe8"/>
+      <!-- the ball, resting on the table whenever nobody is playing -->
+      <circle class="pp-rest" cx="1158" cy="271" r="2.6" fill="#f2efe8"/>
+
+      <!-- the rally ball: one group carries it across, the other lifts and bounces it -->
+      <g class="pp-ballX"><g class="pp-ballY"><circle class="pp-ball" r="2.6" fill="#f6f2e8"/></g></g>
+
+      <!-- the players: she has the left end, he has the right -->
+      <g class="pp-person pp-girl" transform="translate(948 345)">
+        <g class="pp-bob">
+          <ellipse cx="1" cy="0" rx="20" ry="2.6" fill="url(#softShadeFloor)"/>
+          <g fill="#23202a">
+          <path d="M-7 -77 L1 -77 C0 -60 -1 -48 -3 -40 L-6 -2 L-11 -2 L-9 -40 C-9 -52 -9 -64 -7 -77 Z"/>
+          <path d="M-1 -77 L9 -77 C10 -62 11 -50 12 -40 L9 -2 L3 -2 L3 -40 C2 -52 0 -64 -1 -77 Z"/>
+        </g>
+          <path d="M-13 -3 h8 c2 0 3 1.5 3 3 h-11 z M2 -3 h9 c3 0 5 1.5 5 3 h-14 z" fill="#e9e6df"/>
+          <g class="pp-upper">
+            <!-- the free arm, behind the body -->
+            <g class="pp-free">
+              
+              <path d="M-9 -117 L-4 -117 L-4 -99 L-9 -99 Z" fill="url(#ppSkin)"/>
+              <g class="pp-freeLow">
+                <path d="M-9 -101 L-4 -101 L2 -88 L-2 -86 Z" fill="url(#ppSkin)"/>
+                <circle cx="0" cy="-86.5" r="2.3" fill="#c99272"/>
+              </g>
+            </g>
+            <path d="M-9 -120 C-12 -116 -12 -106 -11 -98 C-11 -90 -10 -84 -10 -76 L10 -76 C10 -84 11 -92 11 -100 C12 -108 12 -116 9 -120 Z" fill="#c8564a"/>
+            <path d="M-10 -114 C-11 -104 -10 -90 -9 -78 L-5 -78 C-6 -90 -7 -104 -6 -114 Z" fill="#000" opacity=".22" filter="url(#soften)"/>
+            <path d="M-2.5 -127 h5 v8 h-5 z" fill="url(#ppSkin)"/>
+            <!-- the head: it glances up at the lamp, then drops -->
+            <g class="pp-head">
+              <g class="pp-tail"><path d="M-5 -142 C-13 -142 -17 -134 -16 -123 C-14 -127 -11 -132 -6 -135 Z" fill="#3a2216"/><circle cx="-6" cy="-139.5" r="1.2" fill="#c8564a"/></g>
+              <ellipse cx="1" cy="-136" rx="7.6" ry="9.6" fill="url(#ppSkin)"/>
+              <ellipse cx="-4.6" cy="-135.5" rx="1.4" ry="2.2" fill="#a86f52"/>
+              <path d="M-7 -136 C-8 -146 0 -149 6 -147 C9 -146 10 -143 9 -141 C5 -143 1 -142 -2 -140 C-4 -138 -5 -135 -5 -132 Z" fill="#3a2216"/>
+              <ellipse cx="3.6" cy="-137" rx="1" ry=".75" fill="#2a1a12"/>
+              <ellipse cx="7.4" cy="-137.2" rx=".8" ry=".7" fill="#2a1a12"/>
+              <path d="M8.2 -136.6 C9.2 -135 9.6 -134 8.6 -133.3" stroke="#8a5a42" stroke-width=".7" fill="none"/>
+              <g class="pp-happy" fill="none" stroke-linecap="round">
+                <path d="M2.3 -139.6 Q3.8 -140.4 5 -139.8 M6.6 -139.9 Q7.6 -140.4 8.6 -139.7" stroke="#3a2418" stroke-width=".7"/>
+                <path d="M3.6 -131 Q6.2 -128.6 8.5 -131.1" stroke="#a8404a" stroke-width="1"/>
+              </g>
+              <g class="pp-sad" fill="none" stroke-linecap="round">
+                <path d="M2.3 -139.3 Q3.8 -139.7 5 -140.7 M6.6 -140.7 Q7.6 -139.9 8.6 -139.3" stroke="#3a2418" stroke-width=".7"/>
+                <path d="M3.6 -129.6 Q6.2 -131.4 8.5 -129.6" stroke="#a8404a" stroke-width="1"/>
+              </g>
+            </g>
+            <!-- the bat arm, in front -->
+            <g class="pp-bat">
+              
+              <path d="M6 -119 L11 -117 L13 -100 L8 -99 Z" fill="url(#ppSkin)"/>
+              <path d="M9 -101 L14 -101 L25 -93 L22 -89 Z" fill="url(#ppSkin)"/>
+              <path d="M25 -91 L29 -94.5" stroke="#6b4630" stroke-width="2.2" stroke-linecap="round"/>
+              <ellipse cx="32.5" cy="-97.5" rx="4.4" ry="5.4" fill="#b3302a" stroke="#4a1410" stroke-width=".6" transform="rotate(-25 32.5 -97.5)"/>
+              <circle cx="25" cy="-91" r="2.5" fill="#c99272"/>
+            </g>
+          </g>
+        </g>
+      </g>
+      <g class="pp-person pp-boy" transform="translate(1262 345) scale(-1 1)">
+        <g class="pp-bob">
+          <ellipse cx="1" cy="0" rx="20" ry="2.6" fill="url(#softShadeFloor)"/>
+          <g fill="url(#ppSkin)">
+          <path d="M-7 -60 L1 -60 C0 -52 -1 -46 -3 -40 L-6 -2 L-11 -2 L-9 -40 C-9 -48 -9 -54 -7 -60 Z"/>
+          <path d="M-1 -60 L9 -60 C10 -52 11 -46 12 -40 L9 -2 L3 -2 L3 -40 C2 -48 0 -54 -1 -60 Z"/>
+        </g>
+        <path d="M-9 -78 L11 -78 L12 -57 L2 -55 L0 -62 L-2 -55 L-10 -57 Z" fill="#23262c"/>
+          <path d="M-13 -3 h8 c2 0 3 1.5 3 3 h-11 z M2 -3 h9 c3 0 5 1.5 5 3 h-14 z" fill="#e9e6df"/>
+          <g class="pp-upper">
+            <!-- the free arm, behind the body -->
+            <g class="pp-free">
+              <path d="M-10 -118 L-3 -118 L-3 -108 L-10 -108 Z" fill="#33506c"/>
+              <path d="M-9 -117 L-4 -117 L-4 -99 L-9 -99 Z" fill="url(#ppSkin)"/>
+              <g class="pp-freeLow">
+                <path d="M-9 -101 L-4 -101 L2 -88 L-2 -86 Z" fill="url(#ppSkin)"/>
+                <circle cx="0" cy="-86.5" r="2.3" fill="#c99272"/>
+              </g>
+            </g>
+            <path d="M-9 -120 C-12 -116 -12 -106 -11 -98 C-11 -90 -10 -84 -10 -76 L10 -76 C10 -84 11 -92 11 -100 C12 -108 12 -116 9 -120 Z" fill="#3c5a78"/>
+            <path d="M-10 -114 C-11 -104 -10 -90 -9 -78 L-5 -78 C-6 -90 -7 -104 -6 -114 Z" fill="#000" opacity=".22" filter="url(#soften)"/>
+            <path d="M-2.5 -127 h5 v8 h-5 z" fill="url(#ppSkin)"/>
+            <!-- the head: it glances up at the lamp, then drops -->
+            <g class="pp-head">
+              
+              <ellipse cx="1" cy="-136" rx="7.6" ry="9.6" fill="url(#ppSkin)"/>
+              <ellipse cx="-4.6" cy="-135.5" rx="1.4" ry="2.2" fill="#a86f52"/>
+              <path d="M-7 -137 C-7 -146 1 -148 6 -146.5 C9 -145.5 10 -143 9.3 -141 C5 -142.5 0 -142 -3 -140 C-4.5 -138 -5.2 -136 -5.4 -134 Z" fill="#1e1612"/>
+              <ellipse cx="3.6" cy="-137" rx="1" ry=".75" fill="#2a1a12"/>
+              <ellipse cx="7.4" cy="-137.2" rx=".8" ry=".7" fill="#2a1a12"/>
+              <path d="M8.2 -136.6 C9.2 -135 9.6 -134 8.6 -133.3" stroke="#8a5a42" stroke-width=".7" fill="none"/>
+              <g class="pp-happy" fill="none" stroke-linecap="round">
+                <path d="M2.3 -139.6 Q3.8 -140.4 5 -139.8 M6.6 -139.9 Q7.6 -140.4 8.6 -139.7" stroke="#3a2418" stroke-width=".7"/>
+                <path d="M3.6 -131 Q6.2 -128.6 8.5 -131.1" stroke="#7a2f25" stroke-width="1"/>
+              </g>
+              <g class="pp-sad" fill="none" stroke-linecap="round">
+                <path d="M2.3 -139.3 Q3.8 -139.7 5 -140.7 M6.6 -140.7 Q7.6 -139.9 8.6 -139.3" stroke="#3a2418" stroke-width=".7"/>
+                <path d="M3.6 -129.6 Q6.2 -131.4 8.5 -129.6" stroke="#7a2f25" stroke-width="1"/>
+              </g>
+            </g>
+            <!-- the bat arm, in front -->
+            <g class="pp-bat">
+              <path d="M5 -120 L12 -118 L14 -108 L7 -107 Z" fill="#3c5a78"/>
+              <path d="M6 -119 L11 -117 L13 -100 L8 -99 Z" fill="url(#ppSkin)"/>
+              <path d="M9 -101 L14 -101 L25 -93 L22 -89 Z" fill="url(#ppSkin)"/>
+              <path d="M25 -91 L29 -94.5" stroke="#6b4630" stroke-width="2.2" stroke-linecap="round"/>
+              <ellipse cx="32.5" cy="-97.5" rx="4.4" ry="5.4" fill="#b3302a" stroke="#4a1410" stroke-width=".6" transform="rotate(-25 32.5 -97.5)"/>
+              <circle cx="25" cy="-91" r="2.5" fill="#c99272"/>
+            </g>
+          </g>
+        </g>
+      </g>
 
       <!-- its own small lamp -->
       <path d="M1105 0 V152" stroke="#2b2520" stroke-width="3"/>
@@ -1014,7 +1238,7 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
 
     <!-- ---------- gaming PC: a desk at the back wall ---------- -->
     <g id="pc">
-      <ellipse class="lit lit-pc" cx="1430" cy="250" rx="150" ry="95" fill="url(#pcGlow)" style="mix-blend-mode:screen"/>
+      <ellipse class="lit lit-pc" cx="1440" cy="250" rx="150" ry="95" fill="url(#pcGlow)" style="mix-blend-mode:screen"/>
       <ellipse cx="1430" cy="345" rx="150" ry="9" fill="url(#softShadeFloor)"/>
       <!-- desk -->
       <path d="M1316 292 h6 v52 h-6 z M1540 292 h6 v52 h-6 z" fill="#151210"/>
@@ -1026,25 +1250,77 @@ body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8);
       <path d="M1500 298 h30 v46 h-30 z" fill="#141213"/>
       <path class="lit lit-pc" d="M1504 302 V340" stroke="#5fd0ff" stroke-width="1.6" stroke-opacity=".85"/>
       <!-- monitor: stand, frame, dark panel, then the lit picture -->
-      <path d="M1426 262 h8 v14 h-8 z" fill="#1a1818"/>
-      <ellipse cx="1430" cy="277" rx="18" ry="2.5" fill="#1a1818"/>
-      <rect x="1372" y="212" width="116" height="52" rx="2" fill="#0c0c0e"/>
-      <rect x="1376" y="216" width="108" height="44" fill="#0f1418"/>
+      <path d="M1446 262 h8 v14 h-8 z" fill="#1a1818"/>
+      <ellipse cx="1450" cy="277" rx="18" ry="2.5" fill="#1a1818"/>
+      <rect x="1392" y="212" width="116" height="52" rx="2" fill="#0c0c0e"/>
+      <rect x="1396" y="216" width="108" height="44" fill="#0f1418"/>
       <g class="lit lit-pc">
-        <rect x="1376" y="216" width="108" height="44" fill="url(#pcScreen)"/>
+        <rect x="1396" y="216" width="108" height="44" fill="url(#pcScreen)"/>
         <!-- a game horizon, so it reads as play, not work -->
-        <path d="M1376 246 L1400 238 L1418 243 L1440 232 L1462 241 L1484 236 V260 H1376 Z" fill="#1b2d4a"/>
-        <circle cx="1460" cy="226" r="4" fill="#ffd9a0" opacity=".8"/>
+        <path d="M1396 246 L1420 238 L1438 243 L1460 232 L1482 241 L1504 236 V260 H1396 Z" fill="#1b2d4a"/>
+        <circle cx="1480" cy="226" r="4" fill="#ffd9a0" fill-opacity=".8"/>
+        <!-- his character, running across: the game is live -->
+        <g class="gm-run"><rect x="1400" y="238" width="4" height="6" rx="1" fill="#ffd36a"/></g>
       </g>
       <!-- keyboard -->
-      <path d="M1398 280 L1462 280 L1465 284 L1395 284 Z" fill="#1e1b1a"/>
-      <path class="lit lit-pc" d="M1399 281.5 H1461" stroke="#6f8cff" stroke-width="1" stroke-opacity=".6"/>
-      <!-- the chair, pushed in, back to us -->
-      <g fill="#100d0c">
-        <path d="M1336 246 c0 -6 4 -9 10 -9 h20 c6 0 10 3 10 9 v50 h-40 z"/>
-        <path d="M1330 296 h52 v7 h-52 z"/>
-        <path d="M1354 303 h4 v28 h-4 z"/>
-        <path d="M1334 334 h44 v3 h-44 z"/>
+      <path d="M1418 280 L1482 280 L1485 284 L1415 284 Z" fill="#1e1b1a"/>
+      <path class="lit lit-pc" d="M1419 281.5 H1481" stroke="#6f8cff" stroke-width="1" stroke-opacity=".6"/>
+
+      <!-- the gamer, in a gaming chair at the left of the desk, headset on -->
+      <g class="gm-person" transform="translate(1352 298)">
+        <!-- chair -->
+        <path d="M-22 -52 C-22 -58 -18 -60 -13 -60 L-9 -60 C-5 -60 -3 -57 -3 -52 L-3 -4 L-21 -4 Z" fill="#141215"/>
+        <path d="M-17 -56 V-8" stroke="#8a2a2a" stroke-width="2"/>
+        <path d="M-20 -4 H26 V2 H-20 Z" fill="#19171a"/>
+        <path d="M2 2 h4 v27 h-4 z M-18 30 L26 30 L28 33 L-20 33 Z" fill="#121013"/>
+        <g fill="#0c0b0c"><circle cx="-18" cy="35.5" r="2.4"/><circle cx="4" cy="35.5" r="2.4"/><circle cx="26" cy="35.5" r="2.4"/></g>
+        <!-- legs under the desk -->
+        <path d="M30 -2 L37 -2 L40 37 L33 37 Z" fill="#232c3c"/>
+        <path d="M-6 -6 L30 -4 L31 4 L-6 4 Z M24 -1 L33 -1 L35 38 L27 38 Z" fill="url(#jeans)"/>
+        <path d="M25 37 h11 c3 0 5 2 5 5 h-16 z M32 36 h9 c3 0 4 2 4 4 h-13 z" fill="#e9e6df"/>
+
+        <g class="gm-upper">
+          <!-- far arm, behind -->
+          <g class="gm-arm gm-armF">
+            <path d="M-1 -45 L5 -44 L32 -31 L28 -26 Z" fill="#1f222a"/>
+            <path d="M28 -31 L32 -27 L60 -36 L58 -40 Z" fill="#1f222a"/>
+            <g class="gm-tap gm-tapF"><ellipse cx="61" cy="-38" rx="3.6" ry="2.2" fill="#b98262"/></g>
+          </g>
+          <!-- hoodie -->
+          <path d="M-8 -48 C-6 -54 6 -54 8 -48 L6 -44 L-6 -44 Z" fill="#20232b"/>
+          <path d="M-10 -46 C-13 -40 -13 -28 -11 -16 L-9 2 L10 2 L12 -16 C14 -28 13 -40 9 -46 Z" fill="url(#hoodie)"/>
+          <path d="M3 -44 V-34 M6 -44 V-35" stroke="#c9ccd4" stroke-width=".6" opacity=".7"/>
+          <path d="M2 -50 h6 v6 h-6 z" fill="url(#ppSkin)"/>
+          <!-- the head, headset on, lit blue by the screen -->
+          <g class="gm-head"><g class="gm-headIdle">
+            <ellipse cx="9" cy="-59" rx="7.6" ry="9.6" fill="url(#ppSkin)"/>
+            <path d="M1.5 -59 C1 -69 9 -71.5 15 -69.5 C17.5 -68.5 18 -66 17.2 -64.2 C13 -65.6 8.5 -65 5.5 -63 C4 -61.5 3.4 -59.5 3.2 -57 Z" fill="#1e1612"/>
+            <ellipse cx="11.6" cy="-60.2" rx="1" ry=".75" fill="#2a1a12"/>
+            <ellipse cx="15.2" cy="-60.4" rx=".8" ry=".7" fill="#2a1a12"/>
+            <path d="M16.2 -60 C17.2 -58.4 17.6 -57.4 16.6 -56.8" stroke="#8a5a42" stroke-width=".7" fill="none"/>
+            <g class="gm-happy" fill="none" stroke-linecap="round">
+              <path d="M10.2 -62.8 Q11.7 -63.6 13 -63 M14.4 -63.2 Q15.4 -63.6 16.4 -63" stroke="#2a1a12" stroke-width=".7"/>
+              <path d="M11.4 -54 Q13.9 -51.8 16 -54.1" stroke="#7a2f25" stroke-width="1"/>
+            </g>
+            <g class="gm-sad" fill="none" stroke-linecap="round">
+              <path d="M10.2 -62.6 Q11.7 -63 13 -63.9 M14.4 -63.9 Q15.4 -63.2 16.4 -62.5" stroke="#2a1a12" stroke-width=".7"/>
+              <path d="M11.4 -52.8 Q13.9 -54.7 16 -52.8" stroke="#7a2f25" stroke-width="1"/>
+            </g>
+            <ellipse class="lit lit-pc" cx="14" cy="-59" rx="5" ry="8" fill="#8fb8ff" fill-opacity=".22" filter="url(#soften)"/>
+            <!-- headset: band, ear cup with its RGB ring, mic -->
+            <path d="M2.5 -60 C2.5 -71.5 16 -72.5 16.5 -63" stroke="#19191c" stroke-width="2.2" fill="none"/>
+            <ellipse cx="3.6" cy="-58.2" rx="3.4" ry="4.4" fill="#1b1b20"/>
+            <ellipse class="lit lit-pc" cx="3.6" cy="-58.2" rx="2.4" ry="3.3" fill="none" stroke="#8a7aff" stroke-width=".9" stroke-opacity=".9"/>
+            <path d="M5.5 -55 C8 -51.5 11 -51 13.2 -51.6" stroke="#19191c" stroke-width="1" fill="none"/>
+            <circle cx="13.6" cy="-51.6" r=".9" fill="#19191c"/>
+          </g></g>
+          <!-- near arm, in front, hand on the keys -->
+          <g class="gm-arm gm-armN">
+            <path d="M3 -45 L10 -43 L36 -28 L31 -23 Z" fill="#2f3440"/>
+            <path d="M31 -28 L36 -24 L64 -32 L62 -37 Z" fill="#2f3440"/>
+            <g class="gm-tap gm-tapN"><ellipse cx="66" cy="-34.5" rx="3.8" ry="2.3" fill="#c48e6c"/></g>
+          </g>
+        </g>
       </g>
     </g>
 
@@ -1741,8 +2017,8 @@ function setLight(st, on){
   const changed = st.on !== on;
   st.on = on;
   body.classList.toggle(st.id + "-on", on);
-  // the player reacts to the billiard lamp, but not to the page loading
-  if (st.id === "pool" && changed) body.classList.add("moody");
+  // the people at each station react to its light, but not to the page loading
+  if (changed) body.classList.add("moody-" + st.id);
 
   // tubes stutter and screens blink on the way up, never on the way down
   if (on && changed){
