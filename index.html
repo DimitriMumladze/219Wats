@@ -133,18 +133,18 @@ body{
   color:#a2968a; font-size:16px; line-height:1.5;
   transition:color var(--fade) var(--ease);
 }
-body.lamp-off .caption{ color:#776c62; }
+body:not(.pool-on) .caption{ color:#776c62; }
 
 /* ===========================================================================
    LIGHT STATE
    The whole room is darkened by one overlay instead of redrawing every object,
-   which is how a real room behaves: everything loses light together.
+   which is how a real room behaves. Each station cuts its own soft hole in
+   that overlay, so one corner can go dark while the others stay lit.
    =========================================================================== */
-.lit{ opacity:0; transition:opacity var(--fade) var(--ease); }
-body.lamp-on .lit{ opacity:1; }
-
-#darkness{ opacity:.86; transition:opacity var(--fade) var(--ease); }
-body.lamp-on #darkness{ opacity:0; }
+.lit,.hole{ opacity:0; transition:opacity var(--fade) var(--ease); }
+body.pool-on :is(.lit-pool,.hole-pool),
+body.pong-on :is(.lit-pong,.hole-pong),
+body.pc-on   :is(.lit-pc,.hole-pc){ opacity:1; }
 
 /* Fluorescent warm-up: a few stutters, then steady. Never a smooth fade-in. */
 @keyframes tube-on{
@@ -153,14 +153,13 @@ body.lamp-on #darkness{ opacity:0; }
   34%{opacity:.3}  45%{opacity:1}    56%{opacity:.72}
   68%{opacity:1}  100%{opacity:1}
 }
-@keyframes tube-off-dark{
-   0%{opacity:.86}  5%{opacity:.43}  8%{opacity:.83}
-  15%{opacity:.26} 19%{opacity:.79} 28%{opacity:.16}
-  34%{opacity:.6}  45%{opacity:0}   56%{opacity:.24}
-  68%{opacity:0}  100%{opacity:0}
+/* A PC monitor doesn't stutter, it just blinks once on the way up. */
+@keyframes power-on{
+   0%{opacity:0}   20%{opacity:.7}  35%{opacity:.15}  100%{opacity:1}
 }
-body.warmup .lit{ animation:tube-on 1250ms linear; }
-body.warmup #darkness{ animation:tube-off-dark 1250ms linear; }
+body.warmup-pool :is(.lit-pool,.hole-pool),
+body.warmup-pong :is(.lit-pong,.hole-pong){ animation:tube-on 1250ms linear; }
+body.warmup-pc   :is(.lit-pc,.hole-pc){ animation:power-on 600ms linear; }
 
 /* The player is just breathing. Seven seconds a cycle, four pixels of travel. */
 @keyframes breathe{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-4px) } }
@@ -181,8 +180,9 @@ body.warmup #darkness{ animation:tube-off-dark 1250ms linear; }
 }
 
 /* ===========================================================================
-   SCREEN STATE — one colour for the table's state, shared by the ring, the
-   status chip and the light the screen throws into the room. Registered, so
+   SCREEN STATE — one colour per station's state, shared by its ring and its
+   status word. The body carries the most urgent of the three, which tints the
+   hall summary and the light the screen throws into the room. Registered, so
    the change between states is a fade, not a cut.
    =========================================================================== */
 @property --state{ syntax:"<color>"; inherits:true; initial-value:#8fb8a0; }
@@ -192,9 +192,9 @@ body{
   --state:var(--free); --glow:rgba(255,236,205,.26);
   transition:--state 400ms var(--ease), --glow var(--fade) var(--ease);
 }
-body.state-PLAYING    { --state:var(--live); --glow:rgba(63,191,127,.30); }
-body.state-PLAYING.low{ --state:var(--warn); --glow:rgba(242,169,59,.30); }
-body.state-EXPIRED    { --state:var(--dead); --glow:rgba(224,86,63,.34); }
+body.hall-live{ --state:var(--live); --glow:rgba(63,191,127,.30); }
+body.hall-low { --state:var(--warn); --glow:rgba(242,169,59,.30); }
+body.hall-over{ --state:var(--dead); --glow:rgba(224,86,63,.34); }
 
 /* ===========================================================================
    COUNTER + MONITOR — a physical object standing in the lower right.
@@ -202,7 +202,7 @@ body.state-EXPIRED    { --state:var(--dead); --glow:rgba(224,86,63,.34); }
 .counter{
   position:absolute; z-index:5;
   right:clamp(16px,4vw,74px); bottom:0;
-  width:clamp(420px,37vw,520px);
+  width:clamp(480px,43vw,640px);
   padding-bottom:62px;              /* the monitor stands on the counter top */
 }
 /* Pool of screen light on the counter, tinted by the table's state —
@@ -214,7 +214,7 @@ body.state-EXPIRED    { --state:var(--dead); --glow:rgba(224,86,63,.34); }
   opacity:.5; transition:opacity var(--fade) var(--ease);
   pointer-events:none;
 }
-body.lamp-off .counter::before{ opacity:1; }
+body:not(.pool-on) .counter::before{ opacity:1; }
 
 /* the counter slab */
 .counter-top{
@@ -250,8 +250,8 @@ body.lamp-off .counter::before{ opacity:1; }
   background:#6f5a2c; box-shadow:0 0 5px rgba(255,200,120,.35);
   transition:background 220ms var(--ease);
 }
-body.state-PLAYING .led{ background:#5fe0a0; box-shadow:0 0 7px rgba(95,224,160,.8); }
-body.state-EXPIRED .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8); animation:blink 1.6s steps(1) infinite; }
+body:is(.hall-live,.hall-low) .led{ background:#5fe0a0; box-shadow:0 0 7px rgba(95,224,160,.8); }
+body.hall-over .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,.8); animation:blink 1.6s steps(1) infinite; }
 @keyframes blink{ 50%{ opacity:.25 } }
 
 .neck{ width:78px; height:34px; margin:0 auto; background:linear-gradient(90deg,#241f1b,#39332c 40%,#221d19); }
@@ -265,7 +265,7 @@ body.state-EXPIRED .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,
 /* ---- the screen: a Windows PC standing at the counter -------------------- */
 .screen{
   position:relative;
-  aspect-ratio:4/3;                 /* an old office monitor is not widescreen */
+  aspect-ratio:16/10;               /* a plain office monitor, wide enough for three stations */
   min-height:220px;
   border-radius:var(--r-screen);
   overflow:hidden;
@@ -365,14 +365,38 @@ body.state-EXPIRED .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,
 }
 .lang:hover{ color:var(--lamp); }
 
-.panel{ flex:1; min-height:0; padding:12px 15px 14px; display:flex; flex-direction:column; gap:10px; }
-.panel-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.tbl{ margin:0; font-size:17px; font-weight:600; line-height:1.2; }
-.tbl small{ display:block; font-size:11px; font-weight:400; color:var(--scr-soft); letter-spacing:.02em; }
+.panel{ flex:1; min-height:0; padding:10px 12px 12px; display:flex; flex-direction:column; gap:8px; }
+.panel-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.tbl{ margin:0; font-size:14px; font-weight:600; line-height:1.2; white-space:nowrap; }
+.tbl small{ font-size:11px; font-weight:400; color:var(--scr-soft); letter-spacing:.02em; }
+.stats{ margin:0; font-size:11px; color:var(--scr-soft); white-space:nowrap; }
+.stats b{ font-weight:600; color:var(--scr-ink); }
+
+/* ---- the three stations, side by side, each run on its own --------------- */
+.stations{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.station{
+  --state:var(--free);
+  min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:8px 10px 10px; border-radius:3px;
+  background:var(--scr-card); border:1px solid var(--scr-line);
+  transition:--state 400ms var(--ease);
+}
+.station[data-mode="PLAYING"]    { --state:var(--live); }
+.station[data-mode="PLAYING"].low{ --state:var(--warn); }
+.station[data-mode="EXPIRED"]    { --state:var(--dead); }
+
+.st-head{ grid-area:head; align-self:stretch; display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.st-name{ margin:0; min-width:0; font-size:13px; font-weight:600; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.st-face{ grid-area:face; display:grid; place-items:center; }
+.st-status{
+  grid-area:status; margin:0; display:inline-flex; align-items:center; gap:6px;
+  font-size:11px; color:var(--state); white-space:nowrap;
+}
+.st-status .dot{ width:7px; height:7px; flex:none; border-radius:1px; background:var(--state); }
 
 /* light switch — the one control that is always available */
 .toggle{
-  display:inline-flex; align-items:center; gap:8px;
+  display:inline-flex; align-items:center; gap:8px; flex:none;
   font:inherit; font-size:12.5px; color:var(--scr-soft);
   background:none; border:0; padding:3px 1px; cursor:pointer;
 }
@@ -389,17 +413,10 @@ body.state-EXPIRED .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,
 .toggle[aria-checked="true"] .track{ background:var(--switch-on); }
 .toggle[aria-checked="true"] .track::after{ transform:translateX(14px); }
 
-/* ---- countdown: a dial that drains, in the colour of the table's state ---- */
-.live,.overpane{
-  flex:1; min-height:0;
-  padding:12px 14px; border-radius:3px;
-  background:var(--scr-card); border:1px solid var(--scr-line);
-}
-.live{ display:flex; align-items:center; gap:clamp(14px,2vw,24px); }
-
-.dial{ position:relative; flex:none; width:clamp(118px,11vw,150px); aspect-ratio:1; display:grid; place-items:center; }
+/* ---- countdown: a dial that drains, in the colour of the station's state -- */
+.dial{ position:relative; flex:none; width:clamp(62px,6vw,88px); aspect-ratio:1; display:grid; place-items:center; }
 .ring{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
-.ring circle{ fill:none; stroke-width:5; }
+.ring circle{ fill:none; stroke-width:6; }
 .ring .rail{ stroke:rgba(255,255,255,.08); }
 .ring .arc{
   stroke:var(--state);
@@ -410,39 +427,28 @@ body.state-EXPIRED .led{ background:#ff6a50; box-shadow:0 0 7px rgba(255,106,80,
   position:relative; margin:0;
   /* Sabetchdi is monospaced by construction — no tnum needed, digits cannot shift. */
   font-weight:400;
-  font-size:clamp(26px,2.5vw,34px); line-height:1; letter-spacing:.01em; color:var(--scr-ink);
+  font-size:clamp(15px,1.4vw,20px); line-height:1; letter-spacing:.01em; color:var(--scr-ink);
 }
 
-.info{ min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
-.clock-note{ margin:0; font-size:12.5px; color:var(--scr-soft); }
-.stats{ margin:5px 0 0; font-size:11.5px; color:var(--scr-soft); }
-.stats b{ font-weight:600; color:var(--scr-ink); white-space:nowrap; }
-
+/* one button per card: Start while free, Pay once time is up */
 .start{
-  align-self:flex-start; margin-top:12px;
-  font:inherit; font-size:14px; font-weight:600;
-  padding:8px 18px;
+  grid-area:act; align-self:stretch; margin-top:auto;
+  font:inherit; font-size:13px; font-weight:600; white-space:nowrap;
+  padding:6px 10px;
   color:var(--accent-ink); background:var(--accent);
   border:1px solid var(--accent-dark); border-radius:3px;
   cursor:pointer; transition:background 120ms var(--ease);
 }
 .start:hover{ background:var(--accent-lit); }
 .start:active{ background:var(--accent-dark); }
-body.state-PLAYING #start{ display:none; }
+/* hidden, not removed, while playing, so the three cards keep one height */
+.station[data-mode="PLAYING"] .start{ visibility:hidden; }
 
-/* ---- time over + QR ------------------------------------------------------- */
-.overpane{ display:flex; flex-direction:column; justify-content:center; gap:4px; }
-.qr-row{ display:flex; align-items:center; gap:14px; }
+/* ---- time over: the QR takes the dial's place ---------------------------- */
 .qr-card{ flex:none; display:block; padding:4px; background:#f2efe8; }
-.qr{ width:clamp(60px,6vw,84px); height:clamp(60px,6vw,84px); display:block; }
-#pay{ margin-top:10px; }
-.over{ margin:0; font-size:16px; font-weight:600; color:var(--dead); }
-.scan{ margin:4px 0 0; font-size:12.5px; color:var(--scr-ink); }
-.price{ margin:4px 0 0; font-size:13px; color:var(--lamp); }
-
-/* which pane is on screen */
-body.state-EXPIRED .live{ display:none; }
-body:not(.state-EXPIRED) .overpane{ display:none; }
+.qr{ width:clamp(54px,5.2vw,80px); height:clamp(54px,5.2vw,80px); display:block; }
+.station[data-mode="EXPIRED"] .dial{ display:none; }
+.station:not([data-mode="EXPIRED"]) .qr-card{ display:none; }
 
 /* ---- Windows taskbar ------------------------------------------------------ */
 .taskbar{
@@ -486,23 +492,33 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
   .screen{ aspect-ratio:auto; min-height:0; }
   .page{ overflow:visible; }
   .panel{ padding:14px 16px 18px; }
-  .dial{ width:132px; }
-  .clock{ font-size:30px; }
+  .panel-head{ flex-direction:column; gap:2px; }
+  /* stacked: each station becomes a row — dial on the left, the rest beside it */
+  .stations{ grid-template-columns:1fr; }
+  .station{
+    display:grid; grid-template-columns:auto minmax(0,1fr);
+    grid-template-areas:"face head" "face status" "face act";
+    column-gap:14px; row-gap:5px; align-items:center; padding:10px 12px;
+  }
+  .st-status{ justify-self:start; }
+  .dial{ width:84px; }
+  .qr{ width:76px; height:76px; }
+  .clock{ font-size:19px; }
 }
 
 /* ===========================================================================
    REDUCED MOTION — no flicker, no sway. State still changes, calmly.
    =========================================================================== */
 @media (prefers-reduced-motion:reduce){
-  body.warmup .lit,body.warmup #darkness{ animation:none; }
+  .lit,.hole{ animation:none!important; }
   #sway{ animation:none; }
-  body.state-EXPIRED .led{ animation:none; }
+  body.hall-over .led{ animation:none; }
   *{ transition-duration:200ms!important; }
 }
 </style>
 </head>
 
-<body class="lamp-on state-IDLE">
+<body class="pool-on pong-on pc-on">
 <div class="room">
 
   <!-- =====================================================================
@@ -566,6 +582,34 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
       <filter id="softBeam" x="-25%" y="-15%" width="150%" height="130%">
         <feGaussianBlur stdDeviation="17"/>
       </filter>
+      <filter id="softBeamSm" x="-25%" y="-15%" width="150%" height="130%">
+        <feGaussianBlur stdDeviation="7"/>
+      </filter>
+      <!-- the gaming monitor throws cool light, the only cool light in the room -->
+      <radialGradient id="pcGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#8fc4ff" stop-opacity=".34"/>
+        <stop offset="45%"  stop-color="#5a8fe0" stop-opacity=".12"/>
+        <stop offset="100%" stop-color="#3a5fb0" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="pcScreen" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#2c4f8f"/>
+        <stop offset="62%"  stop-color="#3f7fc4"/>
+        <stop offset="100%" stop-color="#1f3a5e"/>
+      </linearGradient>
+
+      <!-- Where each station's light reaches. Black removes the darkness, and
+           the holes overlap so no seam shows when every light is on. -->
+      <filter id="holeBlur" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="34"/>
+      </filter>
+      <mask id="lightMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1000">
+        <rect x="0" y="0" width="1600" height="1000" fill="#fff"/>
+        <g filter="url(#holeBlur)" fill="#000">
+          <path class="hole hole-pool" d="M-100 -100 H990 V380 H1700 V1100 H-100 Z"/>
+          <rect class="hole hole-pong" x="900" y="-100" width="440" height="560"/>
+          <rect class="hole hole-pc"   x="1260" y="-100" width="440" height="560"/>
+        </g>
+      </mask>
 
       <!-- felt nap -->
       <filter id="feltTex" x="0%" y="0%" width="100%" height="100%">
@@ -590,7 +634,80 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
     <!-- ---------- room shell ---------- -->
     <rect x="0" y="0" width="1600" height="1000" fill="#1a1512"/>
     <rect x="0" y="520" width="1600" height="480" fill="url(#floorFade)"/>
-    <ellipse class="lit" cx="700" cy="860" rx="620" ry="120" fill="url(#floorPool)" style="mix-blend-mode:screen"/>
+    <ellipse class="lit lit-pool" cx="700" cy="860" rx="620" ry="120" fill="url(#floorPool)" style="mix-blend-mode:screen"/>
+
+    <!-- ---------- ping pong: further back, so smaller and higher ---------- -->
+    <g id="pong">
+      <ellipse class="lit lit-pong" cx="1105" cy="336" rx="190" ry="26" fill="url(#floorPool)" style="mix-blend-mode:screen"/>
+      <ellipse cx="1105" cy="344" rx="150" ry="10" fill="url(#softShadeFloor)"/>
+      <!-- far legs, then near legs -->
+      <path d="M1004 268 h5 v66 h-5 z M1201 268 h5 v66 h-5 z" fill="#120d0a"/>
+      <path d="M984 294 h6 v50 h-6 z M1220 294 h6 v50 h-6 z" fill="#1c1510"/>
+      <!-- top, its near edge, and the lit top over it -->
+      <path d="M990 262 L1220 262 L1240 290 L970 290 Z" fill="#163243"/>
+      <path class="lit lit-pong" d="M990 262 L1220 262 L1240 290 L970 290 Z" fill="#245a78"/>
+      <path d="M970 290 H1240 V295 H970 Z" fill="#0d1a22"/>
+      <!-- white edge lines and the centre line -->
+      <g fill="none" stroke="#dfe6ea" stroke-width="1.3" opacity=".55">
+        <path d="M991 263 L1219 263 L1238 289 L972 289 Z"/>
+        <path d="M981 276 H1229"/>
+      </g>
+      <!-- the net, seen edge-on, with a post at each end -->
+      <path d="M1103 252 h4 v38 h-4 z" fill="#d8dde0" opacity=".32"/>
+      <path d="M1105 251 V262 M1105 280 V291" stroke="#2a2724" stroke-width="2.5"/>
+      <!-- a bat and a ball left on the table -->
+      <ellipse cx="1025" cy="281" rx="10" ry="4.5" fill="#a8332a"/>
+      <path d="M1034 282 l9 2" stroke="#6b4630" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="1158" cy="271" r="2.6" fill="#f2efe8"/>
+
+      <!-- its own small lamp -->
+      <path d="M1105 0 V152" stroke="#2b2520" stroke-width="3"/>
+      <path d="M1068 150 H1142 L1166 174 H1044 Z" fill="url(#shadeFace)"/>
+      <ellipse cx="1105" cy="174" rx="61" ry="5" fill="#17120e"/>
+      <g class="lit lit-pong">
+        <ellipse cx="1105" cy="174" rx="61" ry="4.5" fill="#fff1dc" opacity=".9"/>
+        <ellipse cx="1105" cy="178" rx="90" ry="26" fill="url(#bulbGlow)" style="mix-blend-mode:screen"/>
+      </g>
+      <g class="lit lit-pong" style="mix-blend-mode:screen" filter="url(#softBeamSm)">
+        <path d="M1046 177 L1164 177 L1258 300 L952 300 Z" fill="url(#cone)"/>
+      </g>
+    </g>
+
+    <!-- ---------- gaming PC: a desk at the back wall ---------- -->
+    <g id="pc">
+      <ellipse class="lit lit-pc" cx="1430" cy="250" rx="150" ry="95" fill="url(#pcGlow)" style="mix-blend-mode:screen"/>
+      <ellipse cx="1430" cy="345" rx="150" ry="9" fill="url(#softShadeFloor)"/>
+      <!-- desk -->
+      <path d="M1316 292 h6 v52 h-6 z M1540 292 h6 v52 h-6 z" fill="#151210"/>
+      <path d="M1322 276 L1540 276 L1552 286 L1310 286 Z" fill="#2a2522"/>
+      <path d="M1310 286 H1552 V292 H1310 Z" fill="#1a1613"/>
+      <!-- RGB strip under the desk edge -->
+      <path class="lit lit-pc" d="M1314 293 H1548" stroke="#7a6cff" stroke-width="1.6" opacity=".8"/>
+      <!-- tower, with its light strip -->
+      <path d="M1500 298 h30 v46 h-30 z" fill="#141213"/>
+      <path class="lit lit-pc" d="M1504 302 V340" stroke="#5fd0ff" stroke-width="1.6" opacity=".85"/>
+      <!-- monitor: stand, frame, dark panel, then the lit picture -->
+      <path d="M1426 262 h8 v14 h-8 z" fill="#1a1818"/>
+      <ellipse cx="1430" cy="277" rx="18" ry="2.5" fill="#1a1818"/>
+      <rect x="1372" y="212" width="116" height="52" rx="2" fill="#0c0c0e"/>
+      <rect x="1376" y="216" width="108" height="44" fill="#0f1418"/>
+      <g class="lit lit-pc">
+        <rect x="1376" y="216" width="108" height="44" fill="url(#pcScreen)"/>
+        <!-- a game horizon, so it reads as play, not work -->
+        <path d="M1376 246 L1400 238 L1418 243 L1440 232 L1462 241 L1484 236 V260 H1376 Z" fill="#1b2d4a"/>
+        <circle cx="1460" cy="226" r="4" fill="#ffd9a0" opacity=".8"/>
+      </g>
+      <!-- keyboard -->
+      <path d="M1398 280 L1462 280 L1465 284 L1395 284 Z" fill="#1e1b1a"/>
+      <path class="lit lit-pc" d="M1399 281.5 H1461" stroke="#6f8cff" stroke-width="1" opacity=".6"/>
+      <!-- the chair, pushed in, back to us -->
+      <g fill="#100d0c">
+        <path d="M1336 246 c0 -6 4 -9 10 -9 h20 c6 0 10 3 10 9 v50 h-40 z"/>
+        <path d="M1330 296 h52 v7 h-52 z"/>
+        <path d="M1354 303 h4 v28 h-4 z"/>
+        <path d="M1334 334 h44 v3 h-44 z"/>
+      </g>
+    </g>
 
     <!-- ---------- table ---------- -->
     <g>
@@ -643,7 +760,7 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
         <g><ellipse cx="962" cy="615" rx="30" ry="9" fill="url(#softShade)"/><circle cx="956" cy="594" r="23" fill="#bb6a22"/></g>
       </g>
       <!-- light reflecting on the balls -->
-      <g class="lit" fill="#fff6e6">
+      <g class="lit lit-pool" fill="#fff6e6">
         <ellipse cx="584" cy="578" rx="7.5" ry="5.5" opacity=".75"/>
         <ellipse cx="690" cy="546" rx="6.5" ry="5"   opacity=".62"/>
         <ellipse cx="763" cy="510" rx="6"   ry="4.5" opacity=".6"/>
@@ -655,7 +772,7 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
       </g>
 
       <!-- light catching the top edge of the near rails -->
-      <g class="lit" opacity=".5">
+      <g class="lit lit-pool" opacity=".5">
         <path d="M380 400 L1060 400 L1062 405 L380 405 Z" fill="#a9733f"/>
         <path d="M250 700 L1190 700 L1190 706 L250 706 Z" fill="#a9733f"/>
       </g>
@@ -666,7 +783,7 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
         <path d="M258 737 L616 668" stroke="#8a6436" stroke-width="10" stroke-linecap="round"/>
         <path d="M258 737 L350 719" stroke="#3a2a19" stroke-width="10" stroke-linecap="round"/>
         <circle cx="616" cy="668" r="4.6" fill="#2f5f72"/>
-        <path class="lit" d="M262 734 L612 666" stroke="#c89a5e" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+        <path class="lit lit-pool" d="M262 734 L612 666" stroke="#c89a5e" stroke-width="3" stroke-linecap="round" opacity=".65"/>
       </g>
     </g>
 
@@ -683,9 +800,9 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
         </g>
         <!-- his cue, standing on the floor -->
         <path d="M232 540 L248 902" stroke="#2a1d10" stroke-width="8" stroke-linecap="round"/>
-        <path class="lit" d="M233 548 L247 898" stroke="#7d5b31" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+        <path class="lit lit-pool" d="M233 548 L247 898" stroke="#7d5b31" stroke-width="5" stroke-linecap="round" opacity=".8"/>
         <!-- rim light on the side facing the lamp: head, shoulder, hip -->
-        <g class="lit" stroke="#ffd9a0" fill="none" stroke-linecap="round">
+        <g class="lit lit-pool" stroke="#ffd9a0" fill="none" stroke-linecap="round">
           <path d="M187 344 A36 36 0 0 1 196 380" stroke-width="3" opacity=".20"/>
           <path d="M214 452 c20 12 27 29 24 50"    stroke-width="3" opacity=".13"/>
           <path d="M206 600 l-5 92"               stroke-width="2.5" opacity=".10"/>
@@ -702,8 +819,8 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
       <path d="M420 176 L880 176 L880 181 L420 181 Z" fill="#4a443d"/>
       <!-- the lit underside and its bulbs -->
       <ellipse cx="650" cy="234" rx="255" ry="13" fill="#17120e"/>
-      <ellipse class="lit" cx="650" cy="234" rx="255" ry="12" fill="#e8c08a" opacity=".85"/>
-      <g class="lit">
+      <ellipse class="lit lit-pool" cx="650" cy="234" rx="255" ry="12" fill="#e8c08a" opacity=".85"/>
+      <g class="lit lit-pool">
         <ellipse cx="520" cy="235" rx="33" ry="9" fill="#fff1dc"/>
         <ellipse cx="650" cy="235" rx="33" ry="9" fill="#fff1dc"/>
         <ellipse cx="780" cy="235" rx="33" ry="9" fill="#fff1dc"/>
@@ -712,15 +829,16 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
     </g>
 
     <!-- ---------- the cone of light ---------- -->
-    <g class="lit" style="mix-blend-mode:screen" filter="url(#softBeam)">
+    <g class="lit lit-pool" style="mix-blend-mode:screen" filter="url(#softBeam)">
       <path d="M400 238 L900 238 L1150 690 L185 690 Z" fill="url(#cone)"/>
     </g>
 
-    <!-- ---------- darkness: everything above loses its light together ------- -->
-    <rect id="darkness" x="0" y="0" width="1600" height="1000" fill="#0a0806" style="mix-blend-mode:multiply"/>
+    <!-- ---------- darkness: everything above loses its light, except where a
+         station's light cuts through it ---------- -->
+    <rect id="darkness" x="0" y="0" width="1600" height="1000" fill="#0a0806" opacity=".86" mask="url(#lightMask)" style="mix-blend-mode:multiply"/>
   </svg>
 
-  <p class="caption" id="caption">ნათურაში ჩვენი რელეა. როცა გადახდილი დრო მთავრდება, შუქი ქრება.</p>
+  <p class="caption" id="caption">ყველა მაგიდასა და კომპიუტერში ჩვენი რელეა. როცა გადახდილი დრო მთავრდება, დენი ითიშება.</p>
 
   <!-- =====================================================================
        THE COUNTER: an old office monitor running a very plain app.
@@ -768,40 +886,12 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
 
                 <div class="panel">
                   <div class="panel-head">
-                    <h1 class="tbl"><span id="t-table">მაგიდა 1</span><small id="t-hall">დარბაზი ა — რელე ხაზზეა</small></h1>
-                    <button class="toggle" id="lamp" type="button" role="switch" aria-checked="true">
-                      <span class="track" aria-hidden="true"></span><span id="t-lamp">შუქი ჩართულია</span>
-                    </button>
+                    <h1 class="tbl"><span id="t-hall">დარბაზი ა</span> <small id="t-relays">· 3 რელე ხაზზეა</small></h1>
+                    <p class="stats"><span id="t-stats">დღეს: 12 სესია</span> · <b id="t-revenue">184 ₾</b></p>
                   </div>
 
-                  <!-- idle + running -->
-                  <div class="live">
-                    <div class="dial">
-                      <svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-                        <circle class="rail" cx="60" cy="60" r="52"/>
-                        <circle class="arc" id="arc" cx="60" cy="60" r="52"/>
-                      </svg>
-                      <p class="clock" id="clock" role="timer">00:05</p>
-                    </div>
-                    <div class="info">
-                      <p class="clock-note" id="t-note">5 წამიანი სესია</p>
-                      <p class="stats"><span id="t-stats">დღეს: 12 სესია</span> · <b id="t-revenue">184 ₾</b></p>
-                      <button class="start" id="start" type="button">დაწყება</button>
-                    </div>
-                  </div>
-
-                  <!-- time over -->
-                  <div class="overpane">
-                    <div class="qr-row">
-                      <span class="qr-card"><svg class="qr" id="qr" viewBox="0 0 29 29" shape-rendering="crispEdges" role="img" aria-label="გადახდის QR კოდი"></svg></span>
-                      <div>
-                        <p class="over" id="t-over">დრო ამოიწურა</p>
-                        <p class="scan" id="t-scan">დაასკანერეთ და გააგრძელეთ თამაში</p>
-                        <p class="price" id="t-price">+5 წამი — 5 ₾</p>
-                      </div>
-                    </div>
-                    <button class="start" id="pay" type="button">გადახდის სიმულაცია</button>
-                  </div>
+                  <!-- one card per station, cloned from the template below -->
+                  <div class="stations" id="stations"></div>
                 </div>
               </div>
             </div>
@@ -839,6 +929,29 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
   <p class="vh" id="sr" role="status" aria-live="polite"></p>
 </div>
 
+<!-- one station card: name + switch, a dial (or the QR once time is up), a
+     status word and one button -->
+<template id="station-tpl">
+  <section class="station" data-mode="IDLE">
+    <div class="st-head">
+      <h2 class="st-name"></h2>
+      <button class="toggle" type="button" role="switch" aria-checked="true"><span class="track" aria-hidden="true"></span></button>
+    </div>
+    <div class="st-face">
+      <div class="dial">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <circle class="rail" cx="60" cy="60" r="52"/>
+          <circle class="arc" cx="60" cy="60" r="52"/>
+        </svg>
+        <p class="clock" role="timer">00:05</p>
+      </div>
+      <span class="qr-card"><svg class="qr" viewBox="0 0 29 29" shape-rendering="crispEdges" role="img"></svg></span>
+    </div>
+    <p class="st-status"><span class="dot" aria-hidden="true"></span><span class="st-word"></span></p>
+    <button class="start" type="button"></button>
+  </section>
+</template>
+
 <script>
 "use strict";
 
@@ -848,26 +961,29 @@ body:not(.state-EXPIRED) .overpane{ display:none; }
 const STRINGS = {
   title:   "მართვის პანელი",
   tab:     "მართვის პანელი",
-  caption: "ნათურაში ჩვენი რელეა. როცა გადახდილი დრო მთავრდება, შუქი ქრება.",
-  table:   "მაგიდა 1",
-  hall:    "დარბაზი ა — რელე ხაზზეა",
-  lampOn:  "შუქი ჩართულია",
-  lampOff: "შუქი გამორთულია",
-  noteIdle:"5 წამიანი სესია",
-  noteRun: "შუქის გამორთვამდე",
-  noteOff: "შუქი გამორთულია",
+  caption: "ყველა მაგიდასა და კომპიუტერში ჩვენი რელეა. როცა გადახდილი დრო მთავრდება, დენი ითიშება.",
+  hall:    "დარბაზი ა",
+  relays:  "· 3 რელე ხაზზეა",
   start:   "დაწყება",
-  over:    "დრო ამოიწურა",
+  pay:     "გადახდა",
   scan:    "დაასკანერეთ და გააგრძელეთ თამაში",
-  price:   "+5 წამი — 5 ₾",
-  pay:     "გადახდის სიმულაცია",
   srStart: "სესია დაიწყო. ხუთი წამი.",
-  srOver:  "დრო ამოიწურა. შუქი გამორთულია.",
+  srOver:  "დრო ამოიწურა.",
   stFree:  "თავისუფალი",
   stLive:  "მიმდინარეობს",
-  stOver:  "ამოიწურა",
+  stOver:  "დრო ამოიწურა",
+  stOff:   "გამორთულია",
+  hallFree:"ყველა თავისუფალია",
+  hallLive:"მიმდინარე",
+  hallOver:"ამოიწურა",
   stats:   "დღეს: 12 სესია",   // demo figures, so the owner sees the money side
-  revenue: "184 ₾"
+  revenue: "184 ₾",
+  // the relay switches the lamp over a table, and the power to the PC
+  stations: {
+    pool: { name:"ბილიარდი",   light:"შუქი",  price:"5 ₾" },
+    pong: { name:"პინგ-პონგი", light:"შუქი",  price:"3 ₾" },
+    pc:   { name:"კომპიუტერი", light:"კვება", price:"4 ₾" }
+  }
 };
 
 /* One short session, so the whole story plays out in five seconds. */
@@ -875,19 +991,24 @@ const CONFIG = {
   sessionSeconds: 5,   // what Start buys
   paySeconds:     5,   // what one payment buys
   tickMs:         100,
-  warmupMs:       1250 // must match the tube-on keyframes
+  // must match the tube-on and power-on keyframes
+  warmupMs:       { pool:1250, pong:1250, pc:600 }
 };
 
 /* ===========================================================================
-   STATE
+   STATE — the same small machine, once per station
 
      IDLE ──Start──► PLAYING ──5s──► EXPIRED
        ▲                │                │
-       └── light off ───┘   pay() ───────┘
+       └── light off ───┘   paid() ──────┘
 
    Turning the light off during a session ends it, the way a person would.
    =========================================================================== */
-const S = { mode:"IDLE", remain:CONFIG.sessionSeconds, total:CONFIG.sessionSeconds, lamp:true };
+const STATIONS = Object.keys(STRINGS.stations).map((id, i) => ({
+  id, seed: 0x5bf03635 + i * 0x1f3d,
+  mode:"IDLE", remain:CONFIG.sessionSeconds, total:CONFIG.sessionSeconds, on:true,
+  warmupTimer:null, el:null
+}));
 
 /* the dial's circumference, 2·π·52 — matches stroke-dasharray in the CSS */
 const ARC = 326.73;
@@ -895,16 +1016,10 @@ const ARC = 326.73;
 const LOW = 0.3;
 
 let timer = null;
-let warmupTimer = null;
 
 const $ = (id) => document.getElementById(id);
-const el = {
-  body: document.body,
-  lamp: $("lamp"), lampText: $("t-lamp"),
-  start: $("start"), pay: $("pay"),
-  clock: $("clock"), note: $("t-note"), sr: $("sr"),
-  qr: $("qr"), arc: $("arc"), status: $("t-status")
-};
+const body = document.body;
+const sr = $("sr");
 
 /** seconds -> "MM:SS" */
 function mmss(seconds){
@@ -912,117 +1027,133 @@ function mmss(seconds){
   return String(Math.floor(s / 60)).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0");
 }
 
-/* ---------------------------------------------------------------------------
-   The lamp. One place switches the relay and the room.
-   --------------------------------------------------------------------------- */
-function setLamp(on){
-  const changed = S.lamp !== on;
-  S.lamp = on;
-  el.body.classList.toggle("lamp-on", on);
-  el.body.classList.toggle("lamp-off", !on);
+/** Announce, naming the station, since three of them share one live region. */
+function say(st, text){ sr.textContent = STRINGS.stations[st.id].name + ". " + text; }
 
-  // fluorescent tubes stutter on the way up, never on the way down
+/* ---------------------------------------------------------------------------
+   The light. One place switches a station's relay and its corner of the room.
+   --------------------------------------------------------------------------- */
+function setLight(st, on){
+  const changed = st.on !== on;
+  st.on = on;
+  body.classList.toggle(st.id + "-on", on);
+
+  // tubes stutter and screens blink on the way up, never on the way down
   if (on && changed){
-    clearTimeout(warmupTimer);
-    el.body.classList.remove("warmup");
-    void el.body.offsetWidth;                  // restart the animation
-    el.body.classList.add("warmup");
-    warmupTimer = setTimeout(() => el.body.classList.remove("warmup"), CONFIG.warmupMs);
+    const cls = "warmup-" + st.id;
+    clearTimeout(st.warmupTimer);
+    body.classList.remove(cls);
+    void body.offsetWidth;                     // restart the animation
+    body.classList.add(cls);
+    st.warmupTimer = setTimeout(() => body.classList.remove(cls), CONFIG.warmupMs[st.id]);
   }
-  renderLamp();
 }
 
 /* ---------------------------------------------------------------------------
    State machine
    --------------------------------------------------------------------------- */
-function go(mode){
-  S.mode = mode;
-  el.body.classList.remove("state-IDLE","state-PLAYING","state-EXPIRED");
-  el.body.classList.add("state-" + mode);
-  if (mode === "PLAYING") startTimer(); else stopTimer();
-  render();
+function go(st, mode){
+  st.mode = mode;
+  st.el.card.dataset.mode = mode;
+  if (STATIONS.some((s) => s.mode === "PLAYING")) startTimer(); else stopTimer();
+  render(st);
 }
 
 function startTimer(){ if (timer === null) timer = setInterval(tick, CONFIG.tickMs); }
 function stopTimer(){ clearInterval(timer); timer = null; }
 
+/** One clock for the whole hall; each playing station drains on it. */
 function tick(){
-  S.remain = Math.max(0, S.remain - CONFIG.tickMs / 1000);
-  if (S.remain <= 0){ expire(); return; }
-  render();
+  STATIONS.forEach((st) => {
+    if (st.mode !== "PLAYING") return;
+    st.remain = Math.max(0, st.remain - CONFIG.tickMs / 1000);
+    if (st.remain <= 0) expire(st); else render(st);
+  });
 }
 
-function startSession(){
-  S.remain = S.total = CONFIG.sessionSeconds;
-  setLamp(true);
-  el.sr.textContent = STRINGS.srStart;
-  go("PLAYING");
+function startSession(st){
+  st.remain = st.total = CONFIG.sessionSeconds;
+  setLight(st, true);
+  say(st, STRINGS.srStart);
+  go(st, "PLAYING");
 }
 
-/** Time is up: the relay opens, the room goes dark, the QR takes the screen. */
-function expire(){
-  S.remain = 0;
-  setLamp(false);
-  el.sr.textContent = STRINGS.srOver;
-  go("EXPIRED");
+/** Time is up: the relay opens, that corner goes dark, the QR takes the card. */
+function expire(st){
+  st.remain = 0;
+  setLight(st, false);
+  say(st, STRINGS.srOver);
+  go(st, "EXPIRED");
 }
 
 /** Paid: buy more time and bring the light back. */
-function paid(){
-  S.remain = S.total = CONFIG.paySeconds;
-  setLamp(true);
-  el.sr.textContent = STRINGS.srStart;
-  go("PLAYING");
+function paid(st){
+  st.remain = st.total = CONFIG.paySeconds;
+  setLight(st, true);
+  say(st, STRINGS.srStart);
+  go(st, "PLAYING");
 }
 
+/** The card's one button: Start while free, Pay once time is up. */
+function act(st){ if (st.mode === "EXPIRED") paid(st); else startSession(st); }
+
 /** The light switch doubles as the session switch, like a real wall switch. */
-function toggleLamp(){
-  if (S.lamp){
-    setLamp(false);
-    if (S.mode === "PLAYING"){ S.remain = S.total = CONFIG.sessionSeconds; go("IDLE"); }
+function toggle(st){
+  if (st.on){
+    setLight(st, false);
+    if (st.mode === "PLAYING"){ st.remain = st.total = CONFIG.sessionSeconds; go(st, "IDLE"); return; }
   } else {
-    setLamp(true);
-    if (S.mode === "EXPIRED"){ S.remain = S.total = CONFIG.sessionSeconds; go("IDLE"); }
+    setLight(st, true);
+    if (st.mode === "EXPIRED"){ st.remain = st.total = CONFIG.sessionSeconds; go(st, "IDLE"); return; }
   }
+  render(st);
 }
 
 /* ---------------------------------------------------------------------------
    Render
    --------------------------------------------------------------------------- */
-function render(){
-  const left = S.total > 0 ? S.remain / S.total : 0;
-  el.clock.textContent = mmss(S.remain);
-  el.arc.style.strokeDashoffset = String(ARC * (1 - left));
-  el.body.classList.toggle("low", S.mode === "PLAYING" && left <= LOW);
-  el.note.textContent =
-    S.mode === "PLAYING" ? STRINGS.noteRun :
-    S.lamp               ? STRINGS.noteIdle :
-                           STRINGS.noteOff;
-  el.status.textContent =
-    S.mode === "PLAYING" ? STRINGS.stLive :
-    S.mode === "EXPIRED" ? STRINGS.stOver :
-                           STRINGS.stFree;
-  renderLamp();
+function render(st){
+  const t = STRINGS.stations[st.id], e = st.el;
+  const left = st.total > 0 ? st.remain / st.total : 0;
+  e.clock.textContent = mmss(st.remain);
+  e.arc.style.strokeDashoffset = String(ARC * (1 - left));
+  e.card.classList.toggle("low", st.mode === "PLAYING" && left <= LOW);
+  e.word.textContent =
+    st.mode === "PLAYING" ? STRINGS.stLive :
+    st.mode === "EXPIRED" ? STRINGS.stOver :
+    st.on                 ? STRINGS.stFree :
+                            STRINGS.stOff;
+  e.btn.textContent = st.mode === "EXPIRED" ? STRINGS.pay + " — " + t.price : STRINGS.start;
+  e.toggle.setAttribute("aria-checked", String(st.on));
+  renderHall();
 }
 
-function renderLamp(){
-  el.lamp.setAttribute("aria-checked", String(S.lamp));
-  el.lampText.textContent = S.lamp ? STRINGS.lampOn : STRINGS.lampOff;
+/** The hall summary in the app bar, and the screen's glow: the most urgent station wins. */
+function renderHall(){
+  const over = STATIONS.filter((s) => s.mode === "EXPIRED").length;
+  const live = STATIONS.filter((s) => s.mode === "PLAYING").length;
+  const low  = STATIONS.some((s) => s.el.card.classList.contains("low"));
+  body.classList.toggle("hall-over", over > 0);
+  body.classList.toggle("hall-low",  !over && low);
+  body.classList.toggle("hall-live", !over && !low && live > 0);
+  const parts = [];
+  if (live) parts.push(STRINGS.hallLive + ": " + live);
+  if (over) parts.push(STRINGS.hallOver + ": " + over);
+  $("t-status").textContent = parts.length ? parts.join(" · ") : STRINGS.hallFree;
 }
 
 /* ---------------------------------------------------------------------------
    A decorative QR. Fixed seed, so it is the same pattern on every reload.
    --------------------------------------------------------------------------- */
-function drawQr(){
+function drawQr(svg, seed){
   const SIZE = 29, NS = "http://www.w3.org/2000/svg";
-  el.qr.textContent = "";
+  svg.textContent = "";
 
   const bg = document.createElementNS(NS, "rect");
   bg.setAttribute("width", SIZE); bg.setAttribute("height", SIZE);
   bg.setAttribute("fill", "#f2efe8");
-  el.qr.append(bg);
+  svg.append(bg);
 
-  let seed = 0x5bf03635;
   const rand = () => {
     seed = (seed + 0x6D2B79F5) | 0;
     let x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -1041,7 +1172,7 @@ function drawQr(){
   const modules = document.createElementNS(NS, "path");
   modules.setAttribute("d", d.join(""));
   modules.setAttribute("fill", "#1d1b18");
-  el.qr.append(modules);
+  svg.append(modules);
 
   finders.forEach(([fx,fy]) => {
     const ring = document.createElementNS(NS, "rect");
@@ -1053,7 +1184,7 @@ function drawQr(){
     core.setAttribute("x", fx+2); core.setAttribute("y", fy+2);
     core.setAttribute("width", 3); core.setAttribute("height", 3);
     core.setAttribute("fill", "#1d1b18");
-    el.qr.append(ring, core);
+    svg.append(ring, core);
   });
 }
 
@@ -1067,41 +1198,53 @@ function osClock(){
 }
 
 /* ---------------------------------------------------------------------------
+   Cards: one per station, cloned from the template and wired here.
+   --------------------------------------------------------------------------- */
+function buildStations(){
+  const tpl = $("station-tpl"), host = $("stations");
+  STATIONS.forEach((st) => {
+    const t = STRINGS.stations[st.id];
+    const card = tpl.content.firstElementChild.cloneNode(true);
+    const q = (sel) => card.querySelector(sel);
+    st.el = {
+      card, clock:q(".clock"), arc:q(".arc"), word:q(".st-word"),
+      btn:q(".start"), toggle:q(".toggle"), qr:q(".qr")
+    };
+    card.dataset.station = st.id;
+    q(".st-name").textContent = t.name;
+    st.el.toggle.setAttribute("aria-label", t.name + ": " + t.light);
+    st.el.toggle.title = t.light;
+    st.el.qr.setAttribute("aria-label", STRINGS.scan);
+    drawQr(st.el.qr, st.seed);
+    st.el.btn.addEventListener("click", () => act(st));
+    st.el.toggle.addEventListener("click", () => toggle(st));
+    host.append(card);
+  });
+}
+
+/* ---------------------------------------------------------------------------
    Text
    --------------------------------------------------------------------------- */
 function applyStrings(){
   const t = STRINGS;
   document.title = t.title;
-  $("t-tab").textContent   = t.tab;
-  $("caption").textContent = t.caption;
-  $("t-table").textContent = t.table;
-  $("t-hall").textContent  = t.hall;
-  $("start").textContent   = t.start;
-  $("t-over").textContent  = t.over;
-  $("t-scan").textContent  = t.scan;
-  $("t-price").textContent = t.price;
-  $("pay").textContent     = t.pay;
-  $("t-stats").textContent = t.stats;
+  $("t-tab").textContent     = t.tab;
+  $("caption").textContent   = t.caption;
+  $("t-hall").textContent    = t.hall;
+  $("t-relays").textContent  = t.relays;
+  $("t-stats").textContent   = t.stats;
   $("t-revenue").textContent = t.revenue;
-  el.qr.setAttribute("aria-label", t.scan);
-  render();
+  STATIONS.forEach(render);
 }
 
 /* ---------------------------------------------------------------------------
-   Wiring
+   Start: every station lit and free, one button on each card.
    --------------------------------------------------------------------------- */
-el.lamp.addEventListener("click", toggleLamp);
-el.start.addEventListener("click", startSession);
-el.pay.addEventListener("click", paid);
-
-/* ---------------------------------------------------------------------------
-   Start: a lit table, and one button on the screen.
-   --------------------------------------------------------------------------- */
-drawQr();
+buildStations();
 osClock();
 setInterval(osClock, 20000);
 applyStrings();
-go("IDLE");
+STATIONS.forEach((st) => go(st, "IDLE"));
 </script>
 </body>
 </html>
