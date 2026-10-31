@@ -67,7 +67,7 @@ public void TurnOn()
 Use file-scoped namespaces.
 
 ```csharp
-namespace TwoNineteenVolts.Api.Features.Lamps;
+namespace TwoNineteenVolts.Api.Features.Lamps.Shelly;
 
 public class ShellyClient
 {
@@ -111,8 +111,8 @@ public class ShellyClient(HttpClient http)
 Each class, record, interface or enum lives in its own file, named after the type.
 
 ```
-Features/Lamps/LampEndpoints.cs  -> class LampEndpoints
-Features/Lamps/LampStatus.cs     -> record LampStatus
+Features/Lamps/Endpoints/LampEndpoints.cs  -> class LampEndpoints
+Features/Lamps/Contracts/LampStatus.cs     -> record LampStatus
 ```
 
 ## 3. Project Layout
@@ -136,8 +136,8 @@ Application code goes in `src/`, tests in `tests/`. The solution file sits at th
 Projects are named `TwoNineteenVolts.<Part>`. Namespaces follow the folder path.
 
 ```csharp
-// src/TwoNineteenVolts.Api/Features/Lamps/LampEndpoints.cs
-namespace TwoNineteenVolts.Api.Features.Lamps;
+// src/TwoNineteenVolts.Api/Features/Lamps/Endpoints/LampEndpoints.cs
+namespace TwoNineteenVolts.Api.Features.Lamps.Endpoints;
 ```
 
 ### 3.3 One backend project until a split is needed
@@ -148,20 +148,41 @@ Inside a project, group code by feature, not by technical type. Everything one f
 
 ```
 TwoNineteenVolts.Api/
+  Common/
   Features/
-    Lamps/
-      LampEndpoints.cs
-      LampsModule.cs
-      LampStatus.cs
-      ShellyClient.cs
+    Devices/
     Bookings/
-      BookingEndpoints.cs
-      BookingsModule.cs
-      Booking.cs
   Program.cs
 ```
 
 Code shared by several features goes in `Common/`, and only once a second feature actually uses it.
+
+### 3.5 Folders inside a feature
+Inside a feature folder, files are grouped by role:
+
+- `Endpoints/` holds the `<Feature>Endpoints` class (see 4.1).
+- `Contracts/` holds request and response records (see 4.3).
+- Every other part gets its own folder, named after what it is: an external service (`Shelly/`), a store (`Registry/`), a cross-cutting check (`ApiKey/`).
+- `<Feature>Module.cs` stays at the feature root (see 4.4).
+
+```
+Features/Devices/
+  Endpoints/
+    DeviceEndpoints.cs
+  Contracts/
+    DeviceStatus.cs
+    RegisterDeviceRequest.cs
+    TimerRequest.cs
+  Shelly/
+    ShellyCloudClient.cs
+    ShellyCloudOptions.cs
+  Registry/
+    DeviceRegistry.cs
+  ApiKey/
+    ApiKeyFilter.cs
+    ApiKeyOptions.cs
+  DevicesModule.cs
+```
 
 ## 4. Backend (ASP.NET)
 
@@ -169,7 +190,7 @@ Code shared by several features goes in `Common/`, and only once a second featur
 Write endpoints as Minimal APIs, not controllers. Each feature has one `<Feature>Endpoints` class that maps its routes under a `MapGroup`. Handlers are private static methods named after what they do.
 
 ```csharp
-// Features/Lamps/LampEndpoints.cs
+// Features/Lamps/Endpoints/LampEndpoints.cs
 public static class LampEndpoints
 {
     public static void MapLampEndpoints(this IEndpointRouteBuilder app)
@@ -240,7 +261,7 @@ builder.Services.AddLamps();
 Bind each settings section to a typed `<Name>Options` class in the feature folder. The class holds its section name as a constant. Feature code never reads `IConfiguration` by string key.
 
 ```csharp
-// Features/Lamps/ShellyOptions.cs
+// Features/Lamps/Shelly/ShellyOptions.cs
 public class ShellyOptions
 {
     public const string SectionName = "Shelly";
@@ -448,8 +469,8 @@ For anything beyond a small change, first list the files to create or change and
 
 ```
 Plan:
-1. Add Features/Lamps/LampEndpoints.cs with GET /api/lamps/{id}/status
-2. Add Features/Lamps/ShellyClient.cs (local call only)
+1. Add Features/Lamps/Endpoints/LampEndpoints.cs with GET /api/lamps/{id}/status
+2. Add Features/Lamps/Shelly/ShellyClient.cs (local call only)
 3. Register in Program.cs
 OK to proceed?
 ```

@@ -1,11 +1,12 @@
-using TwoNineteenVolts.Api.Features.Lamps;
+using TwoNineteenVolts.Api.Features.Devices;
+using TwoNineteenVolts.Api.Features.Devices.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
-builder.Services.AddLamps();
+builder.Services.AddDevices();
 
 var app = builder.Build();
 
@@ -17,6 +18,6 @@ if (app.Environment.IsDevelopment())
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
-app.MapLampEndpoints();
+app.MapDeviceEndpoints();
 
 app.Run();
