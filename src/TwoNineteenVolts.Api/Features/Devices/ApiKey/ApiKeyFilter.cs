@@ -4,7 +4,7 @@ namespace TwoNineteenVolts.Api.Features.Devices.ApiKey;
 
 public class ApiKeyFilter(IOptions<ApiKeyOptions> options) : IEndpointFilter
 {
-    private const string HeaderName = "X-Api-Key";
+    public const string HeaderName = "X-Api-Key";
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
