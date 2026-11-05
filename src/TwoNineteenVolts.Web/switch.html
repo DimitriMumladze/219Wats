@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>219volts Switch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Archivo:wght@500;800&display=swap">
+<style>
+  /* Layout: one centered control plate, like a wall switch faceplate */
+  :root {
+    --bg: #eef0ee; --plate: #fafbfa; --fg: #1b2420; --muted: #66726c;
+    --line: #d5dad7; --on: #1f9d55; --off: #c0392b; --live: #e0a400;
+    --display: "Archivo", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111513; --plate: #1a201d; --fg: #e8ece9; --muted: #8e9a94;
+            --line: #2c3430; --on: #34c16f; --off: #e0584a; --live: #f2c230; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); font-family: var(--display);
+    display: grid; place-items: center;
+    padding-block: max(24px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .plate {
+    width: 100%; max-width: 360px; background: var(--plate); border: 1px solid var(--line);
+    border-radius: 22px; padding: 28px 24px; display: grid; gap: 22px;
+  }
+  [hidden] { display: none !important; }
+  .step { display: grid; gap: 22px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .id { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+  .state { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--line); flex: none; }
+  .dot.on { background: var(--live); box-shadow: 0 0 0 4px color-mix(in srgb, var(--live) 25%, transparent); }
+  .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button {
+    font: 800 20px/1 var(--display); letter-spacing: 0.06em; padding: 26px 0;
+    border-radius: 14px; border: 2px solid currentColor; background: transparent; cursor: pointer;
+  }
+  #on { color: var(--on); } #off { color: var(--off); }
+  button:hover, button:focus-visible { background: color-mix(in srgb, currentColor 12%, transparent); outline: none; }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .msg { min-height: 1.4em; font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: center; }
+  .foot { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  /* ---- Setup: the same plate, with fields instead of the two big buttons ---- */
+  .lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .field { display: grid; gap: 7px; }
+  label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  input {
+    font: 500 16px/1.2 var(--mono); color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 13px 12px; width: 100%;
+  }
+  input:focus-visible { outline: 2px solid var(--live); outline-offset: 1px; }
+  /* The wide ON/OFF padding would make a form three screens tall */
+  button.primary { font-size: 15px; padding: 15px 0; color: var(--fg); }
+  .err { min-height: 1.4em; margin: 0; font-family: var(--mono); font-size: 12px; color: var(--off); }
+  /* A text link that is a button, so it is reachable by keyboard like the rest */
+  button.link {
+    font: 500 10px/1 var(--mono); letter-spacing: 0.05em; color: var(--muted);
+    border: 0; padding: 0; background: none; text-decoration: underline; cursor: pointer;
+  }
+  button.link:hover, button.link:focus-visible { background: none; color: var(--fg); }
+  button.link:active { transform: none; }
+
+  @media (prefers-reduced-motion: reduce) { button:active { transform: none; } }
+</style>
+</head>
+<body>
+<main class="plate">
+
+  <section class="step" id="step-key" hidden>
+    <div class="head"><h1>219volts</h1><span class="id">SETUP 1/2</span></div>
+    <p class="lead">Enter the API key for this hall's control panel.</p>
+    <form class="field" id="key-form">
+      <label for="key-input">API key</label>
+      <input id="key-input" type="password" autocomplete="off" spellcheck="false" required>
+      <p class="err" id="key-err"></p>
+      <button class="primary" type="submit">Continue</button>
+    </form>
+  </section>
+
+  <section class="step" id="step-device" hidden>
+    <div class="head"><h1>Add a device</h1><span class="id">SETUP 2/2</span></div>
+    <p class="lead">Name it, then give the Shelly device ID. We check the ID against the hall's Shelly account before saving it.</p>
+    <form id="device-form" style="display:grid; gap:16px;">
+      <div class="field">
+        <label for="name-input">Name</label>
+        <input id="name-input" type="text" placeholder="Table light" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="id-input">Device ID</label>
+        <input id="id-input" type="text" placeholder="e4b06371d5e8" autocomplete="off" spellcheck="false" required>
+      </div>
+      <p class="err" id="device-err"></p>
+      <button class="primary" id="connect" type="submit">Connect</button>
+    </form>
+  </section>
+
+  <section class="step" id="step-switch" hidden>
+    <div class="head"><h1 id="name">Device</h1><span class="id">CH 0</span></div>
+    <div class="state"><span class="dot" id="dot"></span><span id="stateText">Checking…</span></div>
+    <div class="buttons">
+      <button id="on" type="button">ON</button>
+      <button id="off" type="button">OFF</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+    <p class="foot"><span id="device-id"></span> · <button class="link" id="change" type="button">Change device</button></p>
+  </section>
+
+</main>
+
+<script>
+  const API_KEY_STORAGE = "219wats.apiKey";   // the same key the control panel stores, so one setup covers both
+  const DEVICE_STORAGE  = "219wats.switch";
+
+  const $ = id => document.getElementById(id);
+  const say = text => { $("msg").textContent = text; };
+
+  /* ---- what this browser remembers -------------------------------------- */
+
+  function read(key){ try { return localStorage.getItem(key); } catch { return null; } }
+  function write(key, value){ try { localStorage.setItem(key, value); } catch {} }
+  function forget(key){ try { localStorage.removeItem(key); } catch {} }
+
+  function savedDevice(){
+    const raw = read(DEVICE_STORAGE);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  let device = null;
+
+  /* ---- the API ----------------------------------------------------------- */
+
+  /** Calls the API; resolves with the JSON body (or null), rejects with the ProblemDetails title. */
+  async function callApi(method, path, body){
+    const headers = { "X-Api-Key": read(API_KEY_STORAGE) || "" };
+    if (body) headers["Content-Type"] = "application/json";
+
+    // Relative, so the page keeps working under the server's /219wats/ path.
+    const res = await fetch("api/devices" + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 401) forget(API_KEY_STORAGE);
+    if (!res.ok){
+      const problem = await res.json().catch(() => ({}));
+      const error = new Error(problem.title || ("HTTP " + res.status));
+      error.status = res.status;
+      throw error;
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  function messageFor(error){
+    if (error.status === 401) return "That API key was rejected.";
+    if (error.status === 502) return "Shelly Cloud is not answering. Try again.";
+    if (!error.status)        return "No connection to the server.";
+    return error.message;     // 404 carries the reason: unknown device, or not registered
+  }
+
+  /* ---- the three steps --------------------------------------------------- */
+
+  function show(step){
+    for (const id of ["key", "device", "switch"]){
+      $("step-" + id).hidden = id !== step;
+    }
+  }
+
+  function askForKey(message){
+    $("key-err").textContent = message || "";
+    $("key-input").value = "";
+    show("key");
+    $("key-input").focus();
+  }
+
+  $("key-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const key = $("key-input").value.trim();
+    if (!key) return;
+    write(API_KEY_STORAGE, key);
+    // The key is only proven once a call uses it, so the next step is where a wrong one surfaces.
+    device ? openSwitch() : show("device");
+  });
+
+  $("device-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const name = $("name-input").value.trim();
+    const deviceId = $("id-input").value.trim();
+    if (!name || !deviceId) return;
+
+    $("connect").disabled = true;
+    $("device-err").textContent = "";
+    try {
+      const status = await callApi("POST", "", { deviceId });
+      device = { name, deviceId };
+      write(DEVICE_STORAGE, JSON.stringify(device));
+      openSwitch(status);
+    } catch (error) {
+      if (error.status === 401) return askForKey(messageFor(error));
+      $("device-err").textContent = messageFor(error);
+    } finally {
+      $("connect").disabled = false;
+    }
+  });
+
+  /* ---- the switch -------------------------------------------------------- */
+
+  function showState(status){
+    const isOn = status ? status.isOn : null;
+    $("dot").className = "dot" + (isOn === true ? " on" : "");
+    $("stateText").textContent =
+      !status || status.online === false ? "Device offline" :
+      isOn === null                      ? "Status unavailable" :
+      isOn                               ? "Light is ON" : "Light is OFF";
+  }
+
+  /** Opens the plate for the saved device. A fresh status means the first paint is already correct. */
+  async function openSwitch(status){
+    $("name").textContent = device.name;
+    $("device-id").textContent = device.deviceId;
+    show("switch");
+
+    if (status){
+      showState(status);
+      say("");
+      return;
+    }
+
+    say("Connecting…");
+    try {
+      // The API keeps registered devices in memory, so a restart forgets this one: register again on every load.
+      showState(await callApi("POST", "", { deviceId: device.deviceId }));
+      say("");
+    } catch (error) {
+      if (error.status === 401) return askForKey(messageFor(error));
+      $("stateText").textContent = "Not connected";
+      say(messageFor(error));
+    }
+  }
+
+  async function setSwitch(on){
+    $("on").disabled = $("off").disabled = true;
+    say("Sending…");
+    try {
+      await callApi("POST", "/" + device.deviceId + (on ? "/on" : "/off"));
+      say(on ? "Turned ON" : "Turned OFF");
+      showState({ online: true, isOn: on });
+    } catch (error) {
+      if (error.status === 401){
+        askForKey(messageFor(error));
+      } else {
+        say(messageFor(error));
+        // The command may still have landed, so show what the relay really reports.
+        callApi("GET", "/" + device.deviceId + "/status").then(showState).catch(() => {});
+      }
+    } finally {
+      setTimeout(() => { $("on").disabled = $("off").disabled = false; }, 1100); // 1 request/sec limit
+    }
+  }
+
+  $("on").addEventListener("click", () => setSwitch(true));
+  $("off").addEventListener("click", () => setSwitch(false));
+
+  $("change").addEventListener("click", () => {
+    forget(DEVICE_STORAGE);
+    device = null;
+    $("device-err").textContent = "";
+    $("name-input").value = "";
+    $("id-input").value = "";
+    show("device");
+    $("name-input").focus();
+  });
+
+  /* ---- start ------------------------------------------------------------- */
+
+  device = savedDevice();
+  if (!read(API_KEY_STORAGE)) askForKey();
+  else if (!device) show("device");
+  else openSwitch();
+</script>
+</body>
+</html>
