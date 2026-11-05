@@ -247,6 +247,24 @@ button.link:hover{ color:var(--scr-ink); }
     try { return JSON.parse(raw); } catch { return null; }
   }
 
+  /** A link can carry the setup, so a bookmark sets a phone up with nothing typed:
+        switch.html#k=<api key>&d=<device id>&n=<name>
+      It rides in the fragment, which browsers never send to the server, so the key stays out of
+      the access log and out of anything between here and the hall. */
+  function takeSetupFromLink(){
+    if (!location.hash) return;
+    const link = new URLSearchParams(location.hash.slice(1));
+
+    const key = link.get("k");
+    if (key) write(API_KEY_STORAGE, key);
+
+    const deviceId = link.get("d");
+    if (deviceId) write(DEVICE_STORAGE, JSON.stringify({ name: link.get("n") || deviceId, deviceId }));
+
+    // Clear the address bar, so the key is not left on screen or carried on by a copied URL.
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
   let device = null;
 
   /* ---- the API ----------------------------------------------------------- */
@@ -524,6 +542,7 @@ button.link:hover{ color:var(--scr-ink); }
 
   /* ---- start ------------------------------------------------------------- */
 
+  takeSetupFromLink();
   device = savedDevice();
   if (!read(API_KEY_STORAGE)) askForKey();
   else if (!device) show("device");
