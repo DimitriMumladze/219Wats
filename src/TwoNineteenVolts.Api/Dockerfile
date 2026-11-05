@@ -8,14 +8,17 @@ EXPOSE 8080
 EXPOSE 8081
 
 
+# Build from the repository root, so the frontend (src/TwoNineteenVolts.Web) is included:
+#   docker build -f src/TwoNineteenVolts.Api/Dockerfile .
+
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["TwoNineteenVolts.Api.csproj", "."]
-RUN dotnet restore "./TwoNineteenVolts.Api.csproj"
-COPY . .
-WORKDIR "/src/."
+COPY ["src/TwoNineteenVolts.Api/TwoNineteenVolts.Api.csproj", "src/TwoNineteenVolts.Api/"]
+RUN dotnet restore "src/TwoNineteenVolts.Api/TwoNineteenVolts.Api.csproj"
+COPY src/ src/
+WORKDIR "/src/src/TwoNineteenVolts.Api"
 RUN dotnet build "./TwoNineteenVolts.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

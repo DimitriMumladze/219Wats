@@ -1532,6 +1532,8 @@ const STRINGS = {
   hallOver:"ამოიწურა",
   stats:   "დღეს: 12 სესია",   // demo figures, so the owner sees the money side
   revenue: "184 ₾",
+  askKey:  "შეიყვანეთ API გასაღები",
+  relayFail:"რელე არ პასუხობს",
   // the relay switches the lamp over a table, and the power to the PC
   stations: {
     pool: { name:"ბილიარდი",   light:"შუქი",  price:"5 ₾" },
@@ -1546,8 +1548,77 @@ const CONFIG = {
   paySeconds:     5,   // what one payment buys
   tickMs:         100,
   // must match the tube-on and power-on keyframes
-  warmupMs:       { pool:1250, pong:1250, pc:600 }
+  warmupMs:       { pool:1250, pong:1250, pc:600 },
+  // Shelly device behind each station; null keeps that station a browser-only demo
+  deviceIds:      { pool:"e4b06371d5e8", pong:null, pc:null }
 };
+
+/* ===========================================================================
+   API — the page is served by TwoNineteenVolts.Api, so calls go to the same origin and path.
+   The key is typed once by the operator and kept in this browser only.
+   =========================================================================== */
+const API_KEY_STORAGE = "219wats.apiKey";
+
+function getApiKey(){
+  let key = null;
+  try { key = localStorage.getItem(API_KEY_STORAGE); } catch {}
+  if (!key){
+    key = prompt(STRINGS.askKey) || "";
+    try { localStorage.setItem(API_KEY_STORAGE, key); } catch {}
+  }
+  return key;
+}
+
+function forgetApiKey(){
+  try { localStorage.removeItem(API_KEY_STORAGE); } catch {}
+}
+
+/** Calls the API; resolves with the JSON body (or null), rejects with the ProblemDetails title. */
+async function callApi(method, path, body){
+  const headers = { "X-Api-Key": getApiKey() };
+  if (body) headers["Content-Type"] = "application/json";
+  // relative, so it also works when the site sits under a path prefix such as /219wats/
+  const res = await fetch("api/devices" + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401) forgetApiKey();
+  if (!res.ok){
+    const problem = await res.json().catch(() => ({}));
+    throw new Error(problem.title || ("HTTP " + res.status));
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function showRelayError(st, error){
+  console.warn(st.id, error);
+  $("caption").textContent = STRINGS.stations[st.id].name + ": " + STRINGS.relayFail + " (" + error.message + ")";
+  say(st, STRINGS.relayFail);
+}
+
+/** Bring the card's light in line with what the relay really reports. */
+function applyDeviceStatus(st, status){
+  if (status && status.isOn !== null) setLight(st, status.isOn);
+  render(st);
+}
+
+/** Sends one command to a station's relay; on failure, shows the error and re-reads the real state. */
+function sendToRelay(st, path, body){
+  const deviceId = CONFIG.deviceIds[st.id];
+  if (!deviceId) return;
+  callApi("POST", "/" + deviceId + path, body).catch((error) => {
+    showRelayError(st, error);
+    callApi("GET", "/" + deviceId + "/status").then((status) => applyDeviceStatus(st, status), () => {});
+  });
+}
+
+/** The API keeps registered devices in memory, so the page registers its devices on every load. */
+function connectRelays(){
+  STATIONS.forEach((st) => {
+    const deviceId = CONFIG.deviceIds[st.id];
+    if (!deviceId) return;
+    callApi("POST", "", { deviceId })
+      .then((status) => applyDeviceStatus(st, status))
+      .catch((error) => showRelayError(st, error));
+  });
+}
 
 /* ===========================================================================
    STATE — the same small machine, once per station
@@ -1629,12 +1700,14 @@ function tick(){
 
 function startSession(st){
   st.remain = st.total = CONFIG.sessionSeconds;
+  sendToRelay(st, "/timer", { seconds: CONFIG.sessionSeconds });
   setLight(st, true);
   say(st, STRINGS.srStart);
   go(st, "PLAYING");
 }
 
-/** Time is up: the relay opens, that corner goes dark, the QR takes the card. */
+/** Time is up: the relay opens, that corner goes dark, the QR takes the card.
+    No command is sent: the relay's own timer (set by Start or Pay) switches it off. */
 function expire(st){
   st.remain = 0;
   setLight(st, false);
@@ -1645,6 +1718,7 @@ function expire(st){
 /** Paid: buy more time and bring the light back. */
 function paid(st){
   st.remain = st.total = CONFIG.paySeconds;
+  sendToRelay(st, "/timer", { seconds: CONFIG.paySeconds });
   setLight(st, true);
   say(st, STRINGS.srStart);
   go(st, "PLAYING");
@@ -1655,6 +1729,7 @@ function act(st){ if (st.mode === "EXPIRED") paid(st); else startSession(st); }
 
 /** The light switch doubles as the session switch, like a real wall switch. */
 function toggle(st){
+  sendToRelay(st, st.on ? "/off" : "/on");
   if (st.on){
     setLight(st, false);
     if (st.mode === "PLAYING"){ st.remain = st.total = CONFIG.sessionSeconds; go(st, "IDLE"); return; }
@@ -1801,6 +1876,7 @@ osClock();
 setInterval(osClock, 20000);
 applyStrings();
 STATIONS.forEach((st) => go(st, "IDLE"));
+connectRelays();
 </script>
 </body>
 </html>
