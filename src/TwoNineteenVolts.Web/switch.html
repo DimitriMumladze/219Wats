@@ -109,7 +109,9 @@ body{
 .ring .arc{
   stroke:var(--state);
   stroke-dasharray:326.73; stroke-dashoffset:0;      /* 2·π·52 */
-  transition:stroke-dashoffset 300ms linear;
+  /* Only the colour eases. The position is set every frame, and a transition on top of that
+     fights each new value instead of smoothing it. */
+  transition:stroke 300ms var(--ease);
 }
 .clock{
   position:relative; margin:0; font-weight:400;
@@ -322,68 +324,71 @@ button.link:hover{ color:var(--scr-ink); }
 
   let state = { online: false, isOn: null };
   let endsAt = null;        // when the relay's own timer switches it off
-  let total = 0;            // what the dial drains from
-  let ticker = null;
+  let total = 0;            // the length the dial drains from, kept for the whole run
+  let frame = null;
+  let shownWhole = -1;      // the second currently on the clock, so the text is only rewritten when it changes
+
+  // A ring that creeps round is motion; when it is not wanted, the clock still ticks, once a second.
+  const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const running = () => endsAt !== null;
+  const secondsLeft = () => running() ? Math.max(0, (endsAt - Date.now()) / 1000) : 0;
 
   /** The one place the card is told what is true, and every value here came from the API. */
   function showState(status){
     state = status ? { online: status.online, isOn: status.isOn } : { online: false, isOn: null };
 
-    const left = status && status.isOn === true ? status.timerRemainingSeconds : null;
-    if (left > 0){
-      // On a reload the device reports what is left, not what it started from, so the dial drains from here.
-      startCountdown(left, left);
+    const reported = status && status.isOn === true ? status.timerRemainingSeconds : null;
+    if (reported > 0){
+      adoptCountdown(reported);
+    } else if (state.isOn === true && running() && reported === null){
+      // Shelly leaves the timer fields out for a moment after a command. Keep counting rather
+      // than blanking a dial that is plainly still running.
     } else {
       stopCountdown();
     }
     paint();
   }
 
-  function startCountdown(seconds, from){
-    total = Math.max(from, 1);
+  /** Starts a run of a known length: the dial drains from here. */
+  function beginCountdown(seconds){
+    total = seconds;
     endsAt = Date.now() + seconds * 1000;
-    if (!ticker) ticker = setInterval(onTick, 250);
+    schedule();
+  }
+
+  /** Takes the device's remaining time, but only when it genuinely disagrees. It arrives rounded
+      to whole seconds, so re-seeding on every read would make the dial stutter, and total must
+      never shrink or the arc would jump back towards full. */
+  function adoptCountdown(seconds){
+    if (!running() || Math.abs(seconds - secondsLeft()) > 1.5){
+      endsAt = Date.now() + seconds * 1000;
+    }
+    total = Math.max(total, seconds, 1);
+    schedule();
+  }
+
+  function schedule(){
+    if (frame !== null) return;
+    frame = smooth ? requestAnimationFrame(onFrame) : setTimeout(onFrame, 1000);
   }
 
   function stopCountdown(){
-    clearInterval(ticker);
-    ticker = null;
+    if (frame !== null){
+      smooth ? cancelAnimationFrame(frame) : clearTimeout(frame);
+      frame = null;
+    }
     endsAt = null;
     total = 0;
   }
 
-  function secondsLeft(){
-    return endsAt ? Math.max(0, (endsAt - Date.now()) / 1000) : 0;
-  }
+  function onFrame(){
+    frame = null;
+    if (!running()) return;
 
-  function paint(){
-    const left = secondsLeft();
-    const share = total > 0 ? left / total : 0;
-    const on = state.isOn === true;
-
-    $("card").dataset.mode = state.online === false ? "DEAD" : on ? "PLAYING" : "IDLE";
-    $("card").classList.toggle("low", endsAt !== null && share <= LOW);
-
-    // A full ring while on without a timer; otherwise it drains with the countdown.
-    $("arc").style.strokeDashoffset = String(ARC * (1 - (endsAt ? share : on ? 1 : 0)));
-    $("clock").textContent = mmss(endsAt ? left : 0);
-
-    $("toggle").setAttribute("aria-checked", String(on));
-    $("word").textContent =
-      state.online === false ? "Device offline" :
-      state.isOn === null    ? "Status unavailable" :
-      on                     ? (endsAt ? "On, running" : "On") : "Off";
-  }
-
-  function mmss(seconds){
-    const whole = Math.max(0, Math.ceil(seconds - 0.0001));
-    return String(Math.floor(whole / 60)).padStart(2, "0") + ":" + String(whole % 60).padStart(2, "0");
-  }
-
-  // Counted here rather than polled: Shelly Cloud allows the whole account one request per second.
-  function onTick(){
     if (secondsLeft() > 0){
       paint();
+      schedule();
       return;
     }
 
@@ -392,6 +397,35 @@ button.link:hover{ color:var(--scr-ink); }
     paint();
     say("Time is up");
     confirmFromServer();      // the relay switched itself off; ask it what really happened
+  }
+
+  /** How long Start would run for, used as the dial's resting face. */
+  function pendingSeconds(){
+    const seconds = Math.floor(Number($("seconds").value));
+    return seconds > 0 ? seconds : 0;
+  }
+
+  function paint(){
+    const on = state.isOn === true;
+    // Idle, or on with no timer, the ring is whole; only a run drains it.
+    const share = running() && total > 0 ? secondsLeft() / total : 1;
+
+    $("card").dataset.mode = state.online === false ? "DEAD" : on ? "PLAYING" : "IDLE";
+    $("card").classList.toggle("low", running() && share <= LOW);
+    $("arc").style.strokeDashoffset = String(ARC * (1 - share));
+
+    // At rest the clock shows what Start would run for, the way the counter monitor does.
+    const whole = Math.max(0, Math.ceil((running() ? secondsLeft() : pendingSeconds()) - 0.0001));
+    if (whole !== shownWhole){
+      shownWhole = whole;
+      $("clock").textContent = String(Math.floor(whole / 60)).padStart(2, "0") + ":" + String(whole % 60).padStart(2, "0");
+    }
+
+    $("toggle").setAttribute("aria-checked", String(on));
+    $("word").textContent =
+      state.online === false ? "Device offline" :
+      state.isOn === null    ? "Status unavailable" :
+      on                     ? (running() ? "On, running" : "On") : "Off";
   }
 
   /** Whatever a press predicted, the device has the last word. */
@@ -450,19 +484,23 @@ button.link:hover{ color:var(--scr-ink); }
   }
 
   $("start").addEventListener("click", () => {
-    const seconds = Math.floor(Number($("seconds").value));
-    if (!(seconds > 0)){
+    const seconds = pendingSeconds();
+    if (!seconds){
       say("Give a number of seconds above zero.");
+      $("seconds").focus();
       return;
     }
     write(SECONDS_STORAGE, String(seconds));
 
     // The relay holds the countdown itself, so the light still goes off with this page closed.
-    startCountdown(seconds, seconds);
+    beginCountdown(seconds);
     state = { online: true, isOn: true };
     paint();
     command("/timer", { seconds }, "Starting…", "Running for " + seconds + "s");
   });
+
+  // At rest the dial shows the length that Start would run, so it follows the field as it is typed.
+  $("seconds").addEventListener("input", () => { if (!running()) paint(); });
 
   $("toggle").addEventListener("click", () => {
     const turningOn = state.isOn !== true;
