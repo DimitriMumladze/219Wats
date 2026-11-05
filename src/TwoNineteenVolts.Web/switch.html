@@ -132,6 +132,11 @@ input{
   width:100%; min-width:0;
 }
 .secs input{ width:92px; text-align:right; }
+/* No spinner: the number is typed, and the arrows are too small to hit on a phone anyway.
+   inputmode="numeric" still brings up the digit keypad. */
+input[type="number"]{ appearance:textfield; -moz-appearance:textfield; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; appearance:none; margin:0; }
 
 /* one button: Start, in the hall's only accent */
 .start{
